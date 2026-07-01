@@ -1,5 +1,5 @@
 import { PREFIX } from "../../../config.js";
-import { imageAI } from "../../../services/spider-x-api.js";
+import { imageAI } from "../../../services/alya-external-api.js";
 
 export default {
   name: "flux",

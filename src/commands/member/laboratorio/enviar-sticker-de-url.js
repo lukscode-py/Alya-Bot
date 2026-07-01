@@ -1,6 +1,6 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
-import { SAMPLE_URLS } from "../../../utils/sample-media.js";
+import { LAB_MEDIA_URLS } from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-sticker-de-url",
@@ -19,7 +19,7 @@ export default {
 
     await delay(3000);
 
-    await sendStickerFromURL(SAMPLE_URLS.sticker);
+    await sendStickerFromURL(LAB_MEDIA_URLS.sticker);
 
     await delay(3000);
 

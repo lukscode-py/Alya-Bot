@@ -2,9 +2,9 @@ import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
 import { getBuffer } from "../../../utils/index.js";
 import {
-  readLocalSample,
-  readRemoteSampleBuffer,
-} from "../../../utils/sample-media.js";
+  readLocalLabMedia,
+  readRemoteLabMediaBuffer,
+} from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-audio-de-buffer",
@@ -26,7 +26,7 @@ export default {
     await delay(3000);
 
     await sendAudioFromBuffer(
-      await readRemoteSampleBuffer("sample-audio.mp3", getBuffer)
+      await readRemoteLabMediaBuffer("lab-audio.mp3", getBuffer)
     );
 
     await delay(3000);
@@ -38,7 +38,7 @@ export default {
     await delay(3000);
 
     await sendAudioFromBuffer(
-      readLocalSample("sample-audio.mp3"),
+      readLocalLabMedia("lab-audio.mp3"),
       true
     );
 
@@ -51,7 +51,7 @@ export default {
     await delay(3000);
 
     await sendAudioFromBuffer(
-      readLocalSample("sample-audio.mp3"),
+      readLocalLabMedia("lab-audio.mp3"),
       false,
       false
     );
@@ -65,7 +65,7 @@ export default {
     await delay(3000);
 
     await sendAudioFromBuffer(
-      await readRemoteSampleBuffer("sample-audio.mp3", getBuffer),
+      await readRemoteLabMediaBuffer("lab-audio.mp3", getBuffer),
       true,
       false
     );

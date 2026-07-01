@@ -1,6 +1,6 @@
 import { PREFIX } from "../../../config.js";
 import { InvalidParameterError } from "../../../errors/index.js";
-import { gpt5Mini } from "../../../services/spider-x-api.js";
+import { gpt5Mini } from "../../../services/alya-external-api.js";
 
 export default {
   name: "gpt-5-mini",

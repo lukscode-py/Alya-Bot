@@ -1,6 +1,6 @@
 import { PREFIX } from "../../../config.js";
 import { InvalidParameterError } from "../../../errors/index.js";
-import { deepseekV4Flash } from "../../../services/spider-x-api.js";
+import { deepseekV4Flash } from "../../../services/alya-external-api.js";
 
 export default {
   name: "deepseek",

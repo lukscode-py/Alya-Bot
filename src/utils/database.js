@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { PREFIX, SPIDER_API_TOKEN } from "../config.js";
+import { PREFIX, EXTERNAL_API_TOKEN } from "../config.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -385,16 +385,16 @@ export function removeAutoResponderItemByKey(key) {
   return true;
 }
 
-export function setSpiderApiToken(token) {
+export function setExternalApiToken(token) {
   const config = readObject(CONFIG_FILE);
 
-  config.spider_api_token = token;
+  config.external_api_token = token;
 
   writeObject(CONFIG_FILE, config);
 }
 
-export function getSpiderApiToken() {
+export function getExternalApiToken() {
   const config = readObject(CONFIG_FILE);
 
-  return config.spider_api_token || SPIDER_API_TOKEN;
+  return config.external_api_token || EXTERNAL_API_TOKEN;
 }

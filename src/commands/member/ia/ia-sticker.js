@@ -2,7 +2,7 @@ import { exec as execChild } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { PREFIX, TEMP_DIR } from "../../../config.js";
-import { imageAI } from "../../../services/spider-x-api.js";
+import { imageAI } from "../../../services/alya-external-api.js";
 import { getBuffer, getRandomName } from "../../../utils/index.js";
 
 export default {

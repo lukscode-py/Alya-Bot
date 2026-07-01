@@ -3,7 +3,7 @@ import path from "node:path";
 import { BOT_EMOJI, BOT_NAME, PREFIX, TEMP_DIR } from "../../config.js";
 import { InvalidParameterError } from "../../errors/index.js";
 import { Ffmpeg } from "../../services/ffmpeg.js";
-import { removeBg } from "../../services/spider-x-api.js";
+import { removeBg } from "../../services/alya-external-api.js";
 import { processStaticSticker } from "../../services/sticker.js";
 import {
   getRandomName,

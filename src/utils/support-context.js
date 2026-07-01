@@ -17,11 +17,11 @@ const supportedHostKeywordsCache = new Map();
 function redactSensitiveContent(content) {
   return `${content}`
     .replace(
-      /((?:export\s+const|const|let|var)\s+(?:OPENAI_API_KEY|LINKER_API_KEY|SPIDER_API_TOKEN)\s*=\s*)(["'`])[\s\S]*?\2/g,
+      /((?:export\s+const|const|let|var)\s+(?:OPENAI_API_KEY|LINKER_API_KEY|EXTERNAL_API_TOKEN)\s*=\s*)(["'`])[\s\S]*?\2/g,
       '$1"$REDACTED"',
     )
     .replace(
-      /((?:OPENAI_API_KEY|LINKER_API_KEY|SPIDER_API_TOKEN)\s*:\s*)(["'`])[\s\S]*?\2/g,
+      /((?:OPENAI_API_KEY|LINKER_API_KEY|EXTERNAL_API_TOKEN)\s*:\s*)(["'`])[\s\S]*?\2/g,
       '$1"$REDACTED"',
     );
 }
@@ -195,7 +195,7 @@ export function buildSupportFallbackPlan({ projectRoot, text = "" }) {
   }
 
   if (
-    /(config|prefix|token|api key|openai|spider|database|configurar|prefixo)/i.test(
+    /(config|prefix|token|api key|openai|external api|database|configurar|prefixo)/i.test(
       normalizedText,
     )
   ) {

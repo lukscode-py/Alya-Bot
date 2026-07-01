@@ -62,11 +62,11 @@ export const TIMEOUT_IN_MILLISECONDS_BY_EVENT = 500;
 
 // URL base da API externa compatível com os comandos de downloads, IA e canvas.
 // Configure pelo ambiente com ALYA_EXTERNAL_API_BASE_URL ou edite abaixo.
-export const SPIDER_API_BASE_URL = readEnv("ALYA_EXTERNAL_API_BASE_URL");
+export const EXTERNAL_API_BASE_URL = readEnv("ALYA_EXTERNAL_API_BASE_URL");
 
 // Token da API externa compatível com os comandos acima.
 // Configure pelo ambiente com ALYA_EXTERNAL_API_TOKEN ou edite abaixo.
-export const SPIDER_API_TOKEN = readEnv(
+export const EXTERNAL_API_TOKEN = readEnv(
   "ALYA_EXTERNAL_API_TOKEN",
   "seu_token_aqui",
 );

@@ -19,7 +19,7 @@ export default {
 
     await delay(3000);
 
-    await sendGifFromFile(path.join(ASSETS_DIR, "samples", "sample-video.mp4"));
+    await sendGifFromFile(path.join(ASSETS_DIR, "lab-media", "lab-video.mp4"));
 
     await delay(3000);
 
@@ -28,7 +28,7 @@ export default {
     await delay(3000);
 
     await sendGifFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-video.mp4"),
+      path.join(ASSETS_DIR, "lab-media", "lab-video.mp4"),
       "Este é um gif com legenda!"
     );
 
@@ -39,7 +39,7 @@ export default {
     await delay(3000);
 
     await sendGifFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-video.mp4"),
+      path.join(ASSETS_DIR, "lab-media", "lab-video.mp4"),
       `Olá @${userLid.split("@")[0]}! Este gif é para você!`,
       [userLid]
     );
@@ -51,7 +51,7 @@ export default {
     await delay(3000);
 
     await sendGifFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-video.mp4"),
+      path.join(ASSETS_DIR, "lab-media", "lab-video.mp4"),
       "Gif sem reply/menção na mensagem",
       null,
       false

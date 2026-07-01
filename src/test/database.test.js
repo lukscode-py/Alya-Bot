@@ -426,10 +426,10 @@ describe("Database Functions", () => {
       cleanupJsonFile("config", configBackup);
     });
 
-    it("should set and get Spider API token", () => {
+    it("should set and get API externa token", () => {
       const testToken = "test_token_" + Date.now();
-      database.setSpiderApiToken(testToken);
-      const token = database.getSpiderApiToken();
+      database.setExternalApiToken(testToken);
+      const token = database.getExternalApiToken();
       assert.strictEqual(token, testToken);
     });
   });

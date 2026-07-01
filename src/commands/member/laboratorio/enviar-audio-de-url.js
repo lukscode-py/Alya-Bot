@@ -1,6 +1,6 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
-import { SAMPLE_URLS } from "../../../utils/sample-media.js";
+import { LAB_MEDIA_URLS } from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-audio-de-url",
@@ -21,7 +21,7 @@ export default {
 
     await delay(3000);
 
-    await sendAudioFromURL(SAMPLE_URLS.audio);
+    await sendAudioFromURL(LAB_MEDIA_URLS.audio);
 
     await delay(3000);
 
@@ -31,7 +31,7 @@ export default {
 
     await delay(3000);
 
-    await sendAudioFromURL(SAMPLE_URLS.audio, true);
+    await sendAudioFromURL(LAB_MEDIA_URLS.audio, true);
 
     await delay(3000);
 
@@ -41,7 +41,7 @@ export default {
 
     await delay(3000);
 
-    await sendAudioFromURL(SAMPLE_URLS.audio, false, false);
+    await sendAudioFromURL(LAB_MEDIA_URLS.audio, false, false);
 
     await delay(3000);
 
@@ -51,6 +51,6 @@ export default {
 
     await delay(3000);
 
-    await sendAudioFromURL(SAMPLE_URLS.audio, true, false);
+    await sendAudioFromURL(LAB_MEDIA_URLS.audio, true, false);
   },
 };

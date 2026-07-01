@@ -3,7 +3,7 @@ import { PREFIX } from "../config.js";
 import { DangerError, InvalidParameterError } from "../errors/index.js";
 import { Ffmpeg } from "../services/ffmpeg.js";
 import { upload } from "../services/linker.js";
-import { canvas } from "../services/spider-x-api.js";
+import { canvas } from "../services/alya-external-api.js";
 import { getRandomNumber } from "./index.js";
 import { fetchRemoteCommandResource } from "./remote-service.js";
 

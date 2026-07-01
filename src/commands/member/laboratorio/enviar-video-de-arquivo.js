@@ -20,7 +20,7 @@ export default {
     await delay(3000);
 
     await sendVideoFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-video.mp4"),
+      path.join(ASSETS_DIR, "lab-media", "lab-video.mp4"),
       "Este é um vídeo de exemplo com legenda"
     );
 
@@ -31,7 +31,7 @@ export default {
     await delay(3000);
 
     await sendVideoFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-video.mp4")
+      path.join(ASSETS_DIR, "lab-media", "lab-video.mp4")
     );
 
     await delay(3000);

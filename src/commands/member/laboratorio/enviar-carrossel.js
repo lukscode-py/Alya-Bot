@@ -1,7 +1,7 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
 import { sendRichCodeMessage } from "../../../utils/codeMessage.js";
-import { SAMPLE_URLS } from "../../../utils/sample-media.js";
+import { LAB_MEDIA_URLS } from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-carrossel",
@@ -27,21 +27,21 @@ export default {
         {
           title: "🖼️ Card 1: Imagem de Exemplo",
           image: {
-            url: SAMPLE_URLS.image,
+            url: LAB_MEDIA_URLS.image,
           },
           caption: "Esta é a primeira imagem do carrossel",
         },
         {
           title: "📸 Card 2: Outra Imagem",
           image: {
-            url: SAMPLE_URLS.logo,
+            url: LAB_MEDIA_URLS.logo,
           },
           caption: "Segunda imagem com descrição diferente",
         },
         {
           title: "🎭 Card 3: Terceira Opção",
           image: {
-            url: SAMPLE_URLS.image,
+            url: LAB_MEDIA_URLS.image,
           },
           caption: "Outro exemplo de card no carrossel",
         },

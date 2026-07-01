@@ -2,9 +2,9 @@ import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
 import { getBuffer } from "../../../utils/index.js";
 import {
-  readLocalSample,
-  readRemoteSampleBuffer,
-} from "../../../utils/sample-media.js";
+  readLocalLabMedia,
+  readRemoteLabMediaBuffer,
+} from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-sticker-de-buffer",
@@ -25,7 +25,7 @@ export default {
 
     await delay(3000);
 
-    const stickerBuffer = readLocalSample("sample-sticker.webp");
+    const stickerBuffer = readLocalLabMedia("lab-sticker.webp");
 
     await sendStickerFromBuffer(stickerBuffer);
 
@@ -37,8 +37,8 @@ export default {
 
     await delay(3000);
 
-    const urlBuffer = await readRemoteSampleBuffer(
-      "sample-sticker.webp",
+    const urlBuffer = await readRemoteLabMediaBuffer(
+      "lab-sticker.webp",
       getBuffer,
     );
 

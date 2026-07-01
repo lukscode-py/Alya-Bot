@@ -1,15 +1,15 @@
 import axios from "axios";
 
 import * as config from "../config.js";
-import { getSpiderApiToken } from "../utils/database.js";
+import { getExternalApiToken } from "../utils/database.js";
 
-const { SPIDER_API_BASE_URL } = config;
+const { EXTERNAL_API_BASE_URL } = config;
 
 function isExternalApiBaseUrlConfigured(baseUrl) {
   return typeof baseUrl === "string" && baseUrl.trim() !== "";
 }
 
-function isSpiderApiTokenConfigured(token) {
+function isExternalApiTokenConfigured(token) {
   return token && token.trim() !== "" && token !== "seu_token_aqui";
 }
 
@@ -20,7 +20,7 @@ e edite o arquivo \`config.js\`:
 
 Procure por:
 
-\`export const SPIDER_API_BASE_URL = readEnv("ALYA_EXTERNAL_API_BASE_URL");\`
+\`export const EXTERNAL_API_BASE_URL = readEnv("ALYA_EXTERNAL_API_BASE_URL");\`
 
 Você também pode configurar a variável de ambiente:
 
@@ -33,30 +33,30 @@ e edite o arquivo \`config.js\`:
 
 Procure por:
 
-\`export const SPIDER_API_TOKEN = "seu_token_aqui";\`
+\`export const EXTERNAL_API_TOKEN = "seu_token_aqui";\`
 
 ou
 
 Use o comando:
 
-${config.PREFIX}set-spider-api-token seu_token_aqui
+${config.PREFIX}set-api-token seu_token_aqui
 
 Não esqueça de ver se ${config.PREFIX} é seu prefixo!
 
 Use um token válido do provedor externo configurado para a Alya Bot.`;
 
-export let spiderAPITokenConfigured =
-  isSpiderApiTokenConfigured(getSpiderApiToken());
+export let externalApiTokenConfigured =
+  isExternalApiTokenConfigured(getExternalApiToken());
 
-function requireSpiderApiToken() {
-  if (!isExternalApiBaseUrlConfigured(SPIDER_API_BASE_URL)) {
+function requireExternalApiToken() {
+  if (!isExternalApiBaseUrlConfigured(EXTERNAL_API_BASE_URL)) {
     throw new Error(messageIfBaseUrlNotConfigured);
   }
 
-  const token = getSpiderApiToken();
-  spiderAPITokenConfigured = isSpiderApiTokenConfigured(token);
+  const token = getExternalApiToken();
+  externalApiTokenConfigured = isExternalApiTokenConfigured(token);
 
-  if (!spiderAPITokenConfigured) {
+  if (!externalApiTokenConfigured) {
     throw new Error(messageIfTokenNotConfigured);
   }
 
@@ -68,12 +68,12 @@ export async function play(type, search) {
     throw new Error("Você precisa informar o que deseja buscar!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
   const { data } = await axios.get(
-    `${SPIDER_API_BASE_URL}/downloads/play-${type}?search=${encodeURIComponent(
+    `${EXTERNAL_API_BASE_URL}/downloads/play-${type}?search=${encodeURIComponent(
       search,
-    )}&api_key=${spiderApiToken}`,
+    )}&api_key=${externalApiToken}`,
   );
 
   return data;
@@ -84,12 +84,12 @@ export async function download(type, url) {
     throw new Error("Você precisa informar uma URL do que deseja buscar!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
   const { data } = await axios.get(
-    `${SPIDER_API_BASE_URL}/downloads/${type}?url=${encodeURIComponent(
+    `${EXTERNAL_API_BASE_URL}/downloads/${type}?url=${encodeURIComponent(
       url,
-    )}&api_key=${spiderApiToken}`,
+    )}&api_key=${externalApiToken}`,
   );
 
   return data;
@@ -104,10 +104,10 @@ export async function gemini(text) {
     throw new Error("Você precisa informar o parâmetro de texto!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
   const { data } = await axios.post(
-    `${SPIDER_API_BASE_URL}/ai/gemini?api_key=${spiderApiToken}`,
+    `${EXTERNAL_API_BASE_URL}/ai/gemini?api_key=${externalApiToken}`,
     {
       text,
     },
@@ -121,10 +121,10 @@ export async function gpt5Mini(text) {
     throw new Error("Você precisa informar o parâmetro de texto!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
   const { data } = await axios.post(
-    `${SPIDER_API_BASE_URL}/ai/gpt-5-mini?api_key=${spiderApiToken}`,
+    `${EXTERNAL_API_BASE_URL}/ai/gpt-5-mini?api_key=${externalApiToken}`,
     {
       text,
     },
@@ -138,10 +138,10 @@ export async function deepseekV4Flash(text) {
     throw new Error("Você precisa informar o parâmetro de texto!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
   const { data } = await axios.post(
-    `${SPIDER_API_BASE_URL}/ai/deepseek-v4-flash?api_key=${spiderApiToken}`,
+    `${EXTERNAL_API_BASE_URL}/ai/deepseek-v4-flash?api_key=${externalApiToken}`,
     {
       text,
     },
@@ -155,11 +155,11 @@ export async function attp(text) {
     throw new Error("Você precisa informar o parâmetro de texto!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
-  return `${SPIDER_API_BASE_URL}/stickers/attp?text=${encodeURIComponent(
+  return `${EXTERNAL_API_BASE_URL}/stickers/attp?text=${encodeURIComponent(
     text,
-  )}&api_key=${spiderApiToken}`;
+  )}&api_key=${externalApiToken}`;
 }
 
 export async function ttp(text) {
@@ -167,11 +167,11 @@ export async function ttp(text) {
     throw new Error("Você precisa informar o parâmetro de texto!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
-  return `${SPIDER_API_BASE_URL}/stickers/ttp?text=${encodeURIComponent(
+  return `${EXTERNAL_API_BASE_URL}/stickers/ttp?text=${encodeURIComponent(
     text,
-  )}&api_key=${spiderApiToken}`;
+  )}&api_key=${externalApiToken}`;
 }
 
 export async function brat(text) {
@@ -179,11 +179,11 @@ export async function brat(text) {
     throw new Error("Você precisa informar o parâmetro de texto!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
-  return `${SPIDER_API_BASE_URL}/stickers/brat?text=${encodeURIComponent(
+  return `${EXTERNAL_API_BASE_URL}/stickers/brat?text=${encodeURIComponent(
     text,
-  )}&api_key=${spiderApiToken}`;
+  )}&api_key=${externalApiToken}`;
 }
 
 export async function abrat(text) {
@@ -191,11 +191,11 @@ export async function abrat(text) {
     throw new Error("Você precisa informar o parâmetro de texto!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
-  return `${SPIDER_API_BASE_URL}/stickers/abrat?text=${encodeURIComponent(
+  return `${EXTERNAL_API_BASE_URL}/stickers/abrat?text=${encodeURIComponent(
     text,
-  )}&api_key=${spiderApiToken}`;
+  )}&api_key=${externalApiToken}`;
 }
 
 export async function pinterest(search) {
@@ -203,12 +203,12 @@ export async function pinterest(search) {
     throw new Error("Você precisa informar o parâmetro de pesquisa!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
   const { data } = await axios.get(
-    `${SPIDER_API_BASE_URL}/downloads/pinterest?search=${encodeURIComponent(
+    `${EXTERNAL_API_BASE_URL}/downloads/pinterest?search=${encodeURIComponent(
       search,
-    )}&api_key=${spiderApiToken}`,
+    )}&api_key=${externalApiToken}`,
   );
 
   return data;
@@ -219,12 +219,12 @@ export async function search(type, search) {
     throw new Error("Você precisa informar o parâmetro de pesquisa!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
   const { data } = await axios.get(
-    `${SPIDER_API_BASE_URL}/search/${type}?search=${encodeURIComponent(
+    `${EXTERNAL_API_BASE_URL}/search/${type}?search=${encodeURIComponent(
       search,
-    )}&api_key=${spiderApiToken}`,
+    )}&api_key=${externalApiToken}`,
   );
 
   return data;
@@ -237,13 +237,13 @@ export function welcome(title, description, imageURL) {
     );
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
-  return `${SPIDER_API_BASE_URL}/canvas/welcome?title=${encodeURIComponent(
+  return `${EXTERNAL_API_BASE_URL}/canvas/welcome?title=${encodeURIComponent(
     title,
   )}&description=${encodeURIComponent(
     description,
-  )}&image_url=${encodeURIComponent(imageURL)}&api_key=${spiderApiToken}`;
+  )}&image_url=${encodeURIComponent(imageURL)}&api_key=${externalApiToken}`;
 }
 
 export function exit(title, description, imageURL) {
@@ -253,13 +253,13 @@ export function exit(title, description, imageURL) {
     );
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
-  return `${SPIDER_API_BASE_URL}/canvas/goodbye?title=${encodeURIComponent(
+  return `${EXTERNAL_API_BASE_URL}/canvas/goodbye?title=${encodeURIComponent(
     title,
   )}&description=${encodeURIComponent(
     description,
-  )}&image_url=${encodeURIComponent(imageURL)}&api_key=${spiderApiToken}`;
+  )}&image_url=${encodeURIComponent(imageURL)}&api_key=${externalApiToken}`;
 }
 
 export async function imageAI(description) {
@@ -267,12 +267,12 @@ export async function imageAI(description) {
     throw new Error("Você precisa informar a descrição da imagem!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
   const { data } = await axios.get(
-    `${SPIDER_API_BASE_URL}/ai/flux?text=${encodeURIComponent(
+    `${EXTERNAL_API_BASE_URL}/ai/flux?text=${encodeURIComponent(
       description,
-    )}&api_key=${spiderApiToken}`,
+    )}&api_key=${externalApiToken}`,
   );
 
   return data;
@@ -283,18 +283,18 @@ export function canvas(type, imageURL) {
     throw new Error("Você precisa informar a URL da imagem!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
-  return `${SPIDER_API_BASE_URL}/canvas/${type}?image_url=${encodeURIComponent(
+  return `${EXTERNAL_API_BASE_URL}/canvas/${type}?image_url=${encodeURIComponent(
     imageURL,
-  )}&api_key=${spiderApiToken}`;
+  )}&api_key=${externalApiToken}`;
 }
 
 export async function updatePlanUser(email, plan) {
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
   const { data } = await axios.post(
-    `${SPIDER_API_BASE_URL}/internal/update-plan-user?api_key=${spiderApiToken}`,
+    `${EXTERNAL_API_BASE_URL}/internal/update-plan-user?api_key=${externalApiToken}`,
     {
       email,
       plan,
@@ -309,14 +309,14 @@ export async function toGif(buffer) {
     throw new Error("Você precisa informar o buffer do arquivo!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
   const formData = new FormData();
   const blob = new Blob([buffer], { type: "image/webp" });
   formData.append("file", blob, "sticker.webp");
 
   const { data } = await axios.post(
-    `${SPIDER_API_BASE_URL}/utilities/to-gif?api_key=${spiderApiToken}`,
+    `${EXTERNAL_API_BASE_URL}/utilities/to-gif?api_key=${externalApiToken}`,
     formData,
     {
       headers: {
@@ -337,14 +337,14 @@ export async function removeBg(
     throw new Error("Você precisa informar o buffer da imagem!");
   }
 
-  const spiderApiToken = requireSpiderApiToken();
+  const externalApiToken = requireExternalApiToken();
 
   const formData = new FormData();
   const blob = new Blob([buffer], { type: mimeType });
   formData.append("image", blob, fileName);
 
   const { data } = await axios.post(
-    `${SPIDER_API_BASE_URL}/removebg?api_key=${spiderApiToken}`,
+    `${EXTERNAL_API_BASE_URL}/removebg?api_key=${externalApiToken}`,
     formData,
     {
       headers: {

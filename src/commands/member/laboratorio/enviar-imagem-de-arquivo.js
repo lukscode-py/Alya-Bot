@@ -20,7 +20,7 @@ export default {
     await delay(3000);
 
     await sendImageFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-image.jpg"),
+      path.join(ASSETS_DIR, "lab-media", "lab-image.jpg"),
       "Esta é uma legenda opcional para a imagem"
     );
 
@@ -31,7 +31,7 @@ export default {
     await delay(3000);
 
     await sendImageFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-image.jpg")
+      path.join(ASSETS_DIR, "lab-media", "lab-image.jpg")
     );
 
     await delay(3000);

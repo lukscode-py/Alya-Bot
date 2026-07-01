@@ -2,9 +2,9 @@ import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
 import { getBuffer } from "../../../utils/index.js";
 import {
-  readLocalSample,
-  readRemoteSampleBuffer,
-} from "../../../utils/sample-media.js";
+  readLocalLabMedia,
+  readRemoteLabMediaBuffer,
+} from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-gif-de-buffer",
@@ -25,7 +25,7 @@ export default {
 
     await delay(3000);
 
-    const fileBuffer = readLocalSample("sample-video.mp4");
+    const fileBuffer = readLocalLabMedia("lab-video.mp4");
 
     await sendGifFromBuffer(fileBuffer);
 
@@ -35,7 +35,7 @@ export default {
 
     await delay(3000);
 
-    const urlBuffer = await readRemoteSampleBuffer("sample-video.mp4", getBuffer);
+    const urlBuffer = await readRemoteLabMediaBuffer("lab-video.mp4", getBuffer);
 
     await sendGifFromBuffer(urlBuffer, "GIF carregado de URL para buffer!");
 

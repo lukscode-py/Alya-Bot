@@ -2,9 +2,9 @@ import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
 import { getBuffer } from "../../../utils/index.js";
 import {
-  readLocalSample,
-  readRemoteSampleBuffer,
-} from "../../../utils/sample-media.js";
+  readLocalLabMedia,
+  readRemoteLabMediaBuffer,
+} from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-imagem-de-buffer",
@@ -25,7 +25,7 @@ export default {
 
     await delay(3000);
 
-    const imageBuffer = readLocalSample("sample-image.jpg");
+    const imageBuffer = readLocalLabMedia("lab-image.jpg");
 
     await sendImageFromBuffer(
       imageBuffer,
@@ -38,7 +38,7 @@ export default {
 
     await delay(3000);
 
-    const urlBuffer = await readRemoteSampleBuffer("sample-image.jpg", getBuffer);
+    const urlBuffer = await readRemoteLabMediaBuffer("lab-image.jpg", getBuffer);
 
     await sendImageFromBuffer(
       urlBuffer,

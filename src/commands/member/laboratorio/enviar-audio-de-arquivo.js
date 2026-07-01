@@ -21,7 +21,7 @@ export default {
     await delay(3000);
 
     await sendAudioFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-audio.mp3")
+      path.join(ASSETS_DIR, "lab-media", "lab-audio.mp3")
     );
 
     await delay(3000);
@@ -33,7 +33,7 @@ export default {
     await delay(3000);
 
     await sendAudioFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-audio.mp3"),
+      path.join(ASSETS_DIR, "lab-media", "lab-audio.mp3"),
       true
     );
 
@@ -46,7 +46,7 @@ export default {
     await delay(3000);
 
     await sendAudioFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-audio.mp3"),
+      path.join(ASSETS_DIR, "lab-media", "lab-audio.mp3"),
       false,
       false
     );
@@ -60,7 +60,7 @@ export default {
     await delay(3000);
 
     await sendAudioFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-audio.mp3"),
+      path.join(ASSETS_DIR, "lab-media", "lab-audio.mp3"),
       true,
       false
     );

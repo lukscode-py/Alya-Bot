@@ -20,7 +20,7 @@ export default {
     await delay(3000);
 
     await sendStickerFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-sticker.webp")
+      path.join(ASSETS_DIR, "lab-media", "lab-sticker.webp")
     );
 
     await delay(3000);
@@ -30,7 +30,7 @@ export default {
     await delay(3000);
 
     await sendStickerFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-sticker.webp")
+      path.join(ASSETS_DIR, "lab-media", "lab-sticker.webp")
     );
 
     await delay(3000);

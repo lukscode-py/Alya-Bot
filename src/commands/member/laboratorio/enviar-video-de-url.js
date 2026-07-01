@@ -1,6 +1,6 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
-import { SAMPLE_URLS } from "../../../utils/sample-media.js";
+import { LAB_MEDIA_URLS } from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-video-de-url",
@@ -19,7 +19,7 @@ export default {
 
     await delay(3000);
 
-    await sendVideoFromURL(SAMPLE_URLS.video);
+    await sendVideoFromURL(LAB_MEDIA_URLS.video);
 
     await delay(3000);
 
@@ -28,7 +28,7 @@ export default {
     await delay(3000);
 
     await sendVideoFromURL(
-      SAMPLE_URLS.video,
+      LAB_MEDIA_URLS.video,
       null,
       false
     );
@@ -40,7 +40,7 @@ export default {
     await delay(3000);
 
     await sendVideoFromURL(
-      SAMPLE_URLS.video,
+      LAB_MEDIA_URLS.video,
       "Aqui está o vídeo que você pediu!"
     );
 
@@ -51,7 +51,7 @@ export default {
     await delay(3000);
 
     await sendVideoFromURL(
-      SAMPLE_URLS.video,
+      LAB_MEDIA_URLS.video,
       `Aqui está o vídeo que você pediu @${userLid.split("@")[0]}!`,
       [userLid]
     );

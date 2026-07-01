@@ -14,7 +14,7 @@ const MENU_SECTIONS = [
       "on",
       "set-menu-image",
       "set-prefix",
-      "set-spider-api-token",
+      "set-api-token",
     ],
   },
   {

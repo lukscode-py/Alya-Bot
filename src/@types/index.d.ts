@@ -227,7 +227,7 @@ declare global {
      * import { ASSETS_DIR } from "../../config.js";
      * import path from "node:path";
      *
-     * const filePath = path.join(ASSETS_DIR, "samples", "sample-audio.mp3");
+     * const filePath = path.join(ASSETS_DIR, "lab-media", "lab-audio.mp3");
      * await sendAudioFromFile(filePath);
      * ```
      * @param filePath Caminho do arquivo
@@ -250,7 +250,7 @@ declare global {
      * import path from "node:path";
      * import fs from "node:fs";
      *
-     * const buffer = fs.readFileSync(path.join(ASSETS_DIR, "samples", "sample-audio.mp3"));
+     * const buffer = fs.readFileSync(path.join(ASSETS_DIR, "lab-media", "lab-audio.mp3"));
      * // ou
      * const buffer = await getBuffer("https://exemplo.com/audio.mp3");
      * await sendAudioFromBuffer(buffer, true, false);
@@ -378,7 +378,7 @@ declare global {
      * import path from "node:path";
      * import fs from "node:fs";
      *
-     * const buffer = fs.readFileSync(path.join(ASSETS_DIR, "samples", "sample-video.mp4"));
+     * const buffer = fs.readFileSync(path.join(ASSETS_DIR, "lab-media", "lab-video.mp4"));
      * // ou
      * const buffer = await getBuffer("https://exemplo.com/video.gif");
      * await sendGifFromBuffer(buffer, "Aqui está seu gif @5511920202020!", ["5511920202020@s.whatsapp.net"]);
@@ -627,7 +627,7 @@ declare global {
      * import path from "node:path";
      * import fs from "node:fs";
      *
-     * const buffer = fs.readFileSync(path.join(ASSETS_DIR, "samples", "sample-sticker.webp"));
+     * const buffer = fs.readFileSync(path.join(ASSETS_DIR, "lab-media", "lab-sticker.webp"));
      * // ou
      * const buffer = await getBuffer("https://exemplo.com/sticker.webp");
      * await sendStickerFromBuffer(buffer);
@@ -700,7 +700,7 @@ declare global {
      * import path from "node:path";
      * import fs from "node:fs";
      *
-     * const buffer = fs.readFileSync(path.join(ASSETS_DIR, "samples", "sample-video.mp4"));
+     * const buffer = fs.readFileSync(path.join(ASSETS_DIR, "lab-media", "lab-video.mp4"));
      * // ou
      * const buffer = await getBuffer("https://exemplo.com/video.mp4");
      * await sendVideoFromBuffer(buffer, "Aqui está o vídeo @5511920202020!", ["5511920202020@s.whatsapp.net"]);
@@ -725,7 +725,7 @@ declare global {
      * import { ASSETS_DIR } from "../../config.js";
      * import path from "node:path";
      *
-     * const filePath = path.join(ASSETS_DIR, "samples", "sample-document.pdf");
+     * const filePath = path.join(ASSETS_DIR, "lab-media", "lab-document.pdf");
      * await sendDocumentFromFile(filePath, "application/pdf", "documento.pdf");
      * ```
      * @param filePath Caminho do arquivo
@@ -769,7 +769,7 @@ declare global {
      * import path from "node:path";
      * import fs from "node:fs";
      *
-     * const buffer = fs.readFileSync(path.join(ASSETS_DIR, "samples", "sample-document.pdf"));
+     * const buffer = fs.readFileSync(path.join(ASSETS_DIR, "lab-media", "lab-document.pdf"));
      * // ou
      * const buffer = await getBuffer("https://exemplo.com/documento.pdf");
      * await sendDocumentFromBuffer(buffer, "application/pdf", "documento.pdf");

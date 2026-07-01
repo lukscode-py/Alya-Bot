@@ -1,6 +1,6 @@
 import { PREFIX } from "../../config.js";
 import { InvalidParameterError } from "../../errors/index.js";
-import { setSpiderApiToken } from "../../utils/database.js";
+import { setExternalApiToken } from "../../utils/database.js";
 
 const MIN_TOKEN_LENGTH = 8;
 const MAX_TOKEN_LENGTH = 200;
@@ -30,12 +30,6 @@ export default {
     "alterar-api-token",
     "mudar-api-token",
     "api-token",
-    "set-spider-api-token",
-    "altera-spider-api-token",
-    "alterar-spider-api-token",
-    "muda-spider-api-token",
-    "mudar-spider-api-token",
-    "spider-api-token",
   ],
   usage: `${PREFIX}set-api-token token aqui`,
   /**
@@ -45,7 +39,7 @@ export default {
     const newToken = readToken(args);
 
     validateToken(newToken);
-    setSpiderApiToken(newToken);
+    setExternalApiToken(newToken);
 
     await sendSuccessReply("Token da API externa atualizado com sucesso!");
   },

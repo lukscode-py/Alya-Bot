@@ -1,7 +1,7 @@
 import axios from "axios";
-import { PREFIX, SPIDER_API_BASE_URL } from "../../config.js";
+import { PREFIX, EXTERNAL_API_BASE_URL } from "../../config.js";
 import { DangerError } from "../../errors/index.js";
-import { getSpiderApiToken } from "../../utils/database.js";
+import { getExternalApiToken } from "../../utils/database.js";
 import { formatExternalApiBalance } from "../../utils/remote-service.js";
 
 function normalizeBaseUrl(baseUrl) {
@@ -9,7 +9,7 @@ function normalizeBaseUrl(baseUrl) {
 }
 
 function ensureBalanceConfig(token) {
-  if (!normalizeBaseUrl(SPIDER_API_BASE_URL)) {
+  if (!normalizeBaseUrl(EXTERNAL_API_BASE_URL)) {
     throw new DangerError(
       "URL da API externa não configurada. Configure ALYA_EXTERNAL_API_BASE_URL ou edite src/config.js.",
     );
@@ -23,7 +23,7 @@ function ensureBalanceConfig(token) {
 }
 
 function buildBalanceUrl(token) {
-  return `${normalizeBaseUrl(SPIDER_API_BASE_URL)}/saldo?api_key=${token}`;
+  return `${normalizeBaseUrl(EXTERNAL_API_BASE_URL)}/saldo?api_key=${token}`;
 }
 
 function getBalanceErrorMessage(error) {
@@ -61,7 +61,7 @@ export default {
    * @param {CommandHandleProps} props
    */
   handle: async ({ sendSuccessReply }) => {
-    const token = getSpiderApiToken();
+    const token = getExternalApiToken();
 
     ensureBalanceConfig(token);
 

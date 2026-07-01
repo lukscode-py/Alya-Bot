@@ -22,7 +22,7 @@ export default {
     await delay(3000);
 
     await sendDocumentFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-document.pdf"),
+      path.join(ASSETS_DIR, "lab-media", "lab-document.pdf"),
       "application/pdf",
       "documento-exemplo.pdf"
     );
@@ -30,7 +30,7 @@ export default {
     await delay(3000);
 
     await sendDocumentFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-text.txt"),
+      path.join(ASSETS_DIR, "lab-media", "lab-text.txt"),
       "text/plain",
       "arquivo-texto-exemplo.txt"
     );
@@ -38,7 +38,7 @@ export default {
     await delay(3000);
 
     await sendDocumentFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-document.txt"),
+      path.join(ASSETS_DIR, "lab-media", "lab-document.txt"),
       "text/plain",
       "outro-documento.txt"
     );
@@ -50,7 +50,7 @@ export default {
     await delay(3000);
 
     await sendDocumentFromFile(
-      path.join(ASSETS_DIR, "samples", "sample-document.pdf")
+      path.join(ASSETS_DIR, "lab-media", "lab-document.pdf")
     );
 
     await delay(3000);

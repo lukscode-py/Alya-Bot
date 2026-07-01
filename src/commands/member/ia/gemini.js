@@ -1,6 +1,6 @@
 import { PREFIX } from "../../../config.js";
 import { InvalidParameterError } from "../../../errors/index.js";
-import { gemini } from "../../../services/spider-x-api.js";
+import { gemini } from "../../../services/alya-external-api.js";
 
 export default {
   name: "gemini",

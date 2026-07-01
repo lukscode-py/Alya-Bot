@@ -2,9 +2,9 @@ import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
 import { getBuffer } from "../../../utils/index.js";
 import {
-  readLocalSample,
-  readRemoteSampleBuffer,
-} from "../../../utils/sample-media.js";
+  readLocalLabMedia,
+  readRemoteLabMediaBuffer,
+} from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-documento-de-buffer",
@@ -25,7 +25,7 @@ export default {
 
     await delay(3000);
 
-    const fileBuffer = readLocalSample("sample-document.pdf");
+    const fileBuffer = readLocalLabMedia("lab-document.pdf");
 
     await socket.sendMessage(
       remoteJid,
@@ -45,7 +45,7 @@ export default {
 
     await delay(3000);
 
-    const urlBuffer = await readRemoteSampleBuffer("sample-text.txt", getBuffer);
+    const urlBuffer = await readRemoteLabMediaBuffer("lab-text.txt", getBuffer);
 
     await socket.sendMessage(
       remoteJid,

@@ -1,6 +1,6 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
-import { SAMPLE_CONTACT } from "../../../utils/sample-media.js";
+import { LAB_CONTACT } from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-contato",
@@ -19,7 +19,7 @@ export default {
 
     await delay(3000);
 
-    await sendContact(SAMPLE_CONTACT.phone, SAMPLE_CONTACT.name);
+    await sendContact(LAB_CONTACT.phone, LAB_CONTACT.name);
 
     await delay(3000);
 

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { BOT_EMOJI, BOT_NAME, PREFIX, TEMP_DIR } from "../../config.js";
 import { InvalidParameterError } from "../../errors/index.js";
-import { abrat } from "../../services/spider-x-api.js";
+import { abrat } from "../../services/alya-external-api.js";
 import { processAnimatedGifToSticker } from "../../services/sticker.js";
 import { getRandomName } from "../../utils/index.js";
 import { fetchRemoteCommandResource } from "../../utils/remote-service.js";

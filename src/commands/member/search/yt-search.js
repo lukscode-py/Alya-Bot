@@ -1,6 +1,6 @@
 import { PREFIX } from "../../../config.js";
 import { InvalidParameterError, WarningError } from "../../../errors/index.js";
-import { search } from "../../../services/spider-x-api.js";
+import { search } from "../../../services/alya-external-api.js";
 
 export default {
   name: "yt-search",

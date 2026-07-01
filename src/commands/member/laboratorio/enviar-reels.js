@@ -1,7 +1,7 @@
 import { delay, generateWAMessageFromContent, proto } from "baileys";
 import { randomBytes } from "node:crypto";
 import { PREFIX } from "../../../config.js";
-import { SAMPLE_REELS } from "../../../utils/sample-media.js";
+import { LAB_REELS } from "../../../utils/lab-media.js";
 
 const META_AI_BOT_JID = "867051314767696@bot";
 const META_AI_BOT_NAME = "Meta AI";
@@ -27,7 +27,7 @@ export default {
 
     const richResponse = buildRichResponse([
       makeTextSubmessage(MAIN_TEXT),
-      makeReelsSubmessage(SAMPLE_REELS),
+      makeReelsSubmessage(LAB_REELS),
     ]);
 
     await sendRichResponseMessage(socket, remoteJid, richResponse, webMessage);

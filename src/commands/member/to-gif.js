@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import { PREFIX } from "../../config.js";
 import { InvalidParameterError } from "../../errors/index.js";
-import { toGif } from "../../services/spider-x-api.js";
+import { toGif } from "../../services/alya-external-api.js";
 import { getRandomName } from "../../utils/index.js";
 
 export default {

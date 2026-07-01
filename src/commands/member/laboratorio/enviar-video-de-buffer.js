@@ -2,9 +2,9 @@ import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
 import { getBuffer } from "../../../utils/index.js";
 import {
-  readLocalSample,
-  readRemoteSampleBuffer,
-} from "../../../utils/sample-media.js";
+  readLocalLabMedia,
+  readRemoteLabMediaBuffer,
+} from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-video-de-buffer",
@@ -25,7 +25,7 @@ export default {
 
     await delay(3000);
 
-    const videoBuffer = readLocalSample("sample-video.mp4");
+    const videoBuffer = readLocalLabMedia("lab-video.mp4");
 
     await sendVideoFromBuffer(videoBuffer, "Aqui está o vídeo do buffer local");
 
@@ -35,7 +35,7 @@ export default {
 
     await delay(3000);
 
-    const urlBuffer = await readRemoteSampleBuffer("sample-video.mp4", getBuffer);
+    const urlBuffer = await readRemoteLabMediaBuffer("lab-video.mp4", getBuffer);
 
     await sendVideoFromBuffer(urlBuffer, "Aqui está o vídeo do buffer de URL");
 
@@ -56,7 +56,7 @@ export default {
     await delay(3000);
 
     await sendVideoFromBuffer(
-      await readRemoteSampleBuffer("sample-video.mp4", getBuffer),
+      await readRemoteLabMediaBuffer("lab-video.mp4", getBuffer),
       `Aqui está o vídeo que você pediu @${userLid.split("@")[0]}!`,
       [userLid]
     );

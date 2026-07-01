@@ -1,6 +1,6 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
-import { SAMPLE_URLS } from "../../../utils/sample-media.js";
+import { LAB_MEDIA_URLS } from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-documento-de-url",
@@ -22,7 +22,7 @@ export default {
     await delay(3000);
 
     await sendDocumentFromURL(
-      SAMPLE_URLS.document,
+      LAB_MEDIA_URLS.document,
       "application/pdf",
       "documento-pdf-da-url.pdf"
     );
@@ -30,7 +30,7 @@ export default {
     await delay(3000);
 
     await sendDocumentFromURL(
-      SAMPLE_URLS.text,
+      LAB_MEDIA_URLS.text,
       "text/plain",
       "arquivo-texto-da-url.txt"
     );
@@ -49,7 +49,7 @@ export default {
 
     await delay(3000);
 
-    await sendDocumentFromURL(SAMPLE_URLS.document);
+    await sendDocumentFromURL(LAB_MEDIA_URLS.document);
 
     await delay(3000);
 

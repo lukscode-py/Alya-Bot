@@ -1,6 +1,6 @@
 import { PREFIX } from "../../config.js";
 import { InvalidParameterError } from "../../errors/index.js";
-import { attp } from "../../services/spider-x-api.js";
+import { attp } from "../../services/alya-external-api.js";
 import { fetchRemoteCommandResource } from "../../utils/remote-service.js";
 
 function readStickerText(args) {

@@ -1,6 +1,6 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
-import { SAMPLE_URLS } from "../../../utils/sample-media.js";
+import { LAB_MEDIA_URLS } from "../../../utils/lab-media.js";
 
 export default {
   name: "enviar-gif-de-url",
@@ -19,7 +19,7 @@ export default {
 
     await delay(3000);
 
-    await sendGifFromURL(SAMPLE_URLS.video);
+    await sendGifFromURL(LAB_MEDIA_URLS.video);
 
     await delay(3000);
 
@@ -27,7 +27,7 @@ export default {
 
     await delay(3000);
 
-    await sendGifFromURL(SAMPLE_URLS.video, "GIF carregado de uma URL externa!");
+    await sendGifFromURL(LAB_MEDIA_URLS.video, "GIF carregado de uma URL externa!");
 
     await delay(3000);
 
@@ -36,7 +36,7 @@ export default {
     await delay(3000);
 
     await sendGifFromURL(
-      SAMPLE_URLS.video,
+      LAB_MEDIA_URLS.video,
       `@${userLid.split("@")[0]} olha que legal este gif!`,
       [userLid]
     );
@@ -48,7 +48,7 @@ export default {
     await delay(3000);
 
     await sendGifFromURL(
-      SAMPLE_URLS.video,
+      LAB_MEDIA_URLS.video,
       "GIF sem reply",
       undefined,
       false

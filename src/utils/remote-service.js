@@ -1,4 +1,4 @@
-import { SPIDER_API_BASE_URL } from "../config.js";
+import { EXTERNAL_API_BASE_URL } from "../config.js";
 
 export const ALYA_EXTERNAL_API_LABEL = "API externa da Alya";
 
@@ -46,7 +46,7 @@ function resolvePayloadMessage(payload) {
 }
 
 export function isConfiguredExternalApiUrl(url) {
-  const baseUrl = normalizeUrl(SPIDER_API_BASE_URL);
+  const baseUrl = normalizeUrl(EXTERNAL_API_BASE_URL);
   const targetUrl = normalizeUrl(url);
 
   return Boolean(baseUrl && targetUrl.startsWith(baseUrl));
