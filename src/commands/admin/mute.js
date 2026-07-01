@@ -1,20 +1,26 @@
-/**
- * Desenvolvido por: Mkg
- * Refatorado por: Dev Gui
- *
- * @author Dev Gui
- */
-import { BOT_LID, OWNER_LID, PREFIX } from "../../config.js";
-import { DangerError } from "../../errors/index.js";
+import { PREFIX } from "../../config.js";
 import { checkIfMemberIsMuted, muteMember } from "../../utils/database.js";
-import { onlyNumbers } from "../../utils/index.js";
+import {
+  assertGroupCommand,
+  assertMemberTarget,
+  assertMutableTarget,
+  assertTargetCanBeMuted,
+  getMemberTargetNumber,
+  resolveMemberTargetLid,
+} from "../../utils/admin-command-utils.js";
+
+function buildUsageMessage() {
+  return `Você precisa mencionar um usuário ou responder à mensagem do usuário que deseja mutar.
+
+Exemplo: ${PREFIX}mute @fulano`;
+}
 
 export default {
   name: "mute",
   description:
-    "Silencia um usuário no grupo (apaga as mensagens do usuário automáticamente).",
+    "Silencia um usuário no grupo e apaga as mensagens novas desse membro.",
   commands: ["mute", "mutar"],
-  usage: `${PREFIX}mute @usuario ou (responda à mensagem do usuário que deseja mutar)`,
+  usage: `${PREFIX}mute @usuario ou responda à mensagem do usuário que deseja mutar`,
   /**
    * @param {CommandHandleProps} props
    */
@@ -27,64 +33,36 @@ export default {
     getGroupMetadata,
     isGroup,
   }) => {
-    if (!isGroup) {
-      throw new DangerError("Este comando só pode ser usado em grupos.");
-    }
+    assertGroupCommand(isGroup);
 
-    if (!args.length && !replyLid) {
-      throw new DangerError(
-        `Você precisa mencionar um usuário ou responder à mensagem do usuário que deseja mutar.\n\nExemplo: ${PREFIX}mute @fulano`
-      );
-    }
+    const targetLid = resolveMemberTargetLid({ args, replyLid });
+    const targetNumber = getMemberTargetNumber(targetLid);
 
-    const userId = replyLid
-      ? replyLid
-      : args[0]
-      ? `${onlyNumbers(args[0])}@lid`
-      : null;
-
-    const targetUserNumber = onlyNumbers(userId);
-
-    if (OWNER_LID && userId === OWNER_LID) {
-      throw new DangerError("Você não pode mutar o dono do bot!");
-    }
-
-    if (BOT_LID && userId === BOT_LID) {
-      throw new DangerError("Você não pode mutar o bot.");
-    }
+    assertMemberTarget(targetLid, buildUsageMessage());
+    assertMutableTarget(targetLid);
 
     const groupMetadata = await getGroupMetadata();
-    const isUserInGroup = groupMetadata.participants.some(
-      (participant) => participant.id === userId
-    );
+    const targetStatus = assertTargetCanBeMuted({ groupMetadata, targetLid });
 
-    if (!isUserInGroup) {
+    if (!targetStatus.ok) {
       return sendErrorReply(
-        `O usuário @${targetUserNumber} não está neste grupo.`,
-        [userId]
+        `O usuário @${targetNumber} não está neste grupo.`,
+        [targetLid],
       );
     }
 
-    const isTargetAdmin = groupMetadata.participants.some(
-      (participant) => participant.id === userId && participant.admin
-    );
-
-    if (isTargetAdmin) {
-      throw new DangerError("Você não pode mutar um administrador.");
-    }
-
-    if (checkIfMemberIsMuted(remoteJid, userId)) {
+    if (checkIfMemberIsMuted(remoteJid, targetLid)) {
       return sendErrorReply(
-        `O usuário @${targetUserNumber} já está silenciado neste grupo.`,
-        [userId]
+        `O usuário @${targetNumber} já está silenciado neste grupo.`,
+        [targetLid],
       );
     }
 
-    muteMember(remoteJid, userId);
+    muteMember(remoteJid, targetLid);
 
     await sendSuccessReply(
-      `@${targetUserNumber} foi mutado com sucesso neste grupo!`,
-      [userId]
+      `@${targetNumber} foi mutado com sucesso neste grupo!`,
+      [targetLid],
     );
   },
 };
