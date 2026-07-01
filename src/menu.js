@@ -66,7 +66,7 @@ const MENU_SECTIONS = [
       "brat",
       "bratvid",
       "cep",
-      "exemplos-de-mensagens",
+      "laboratorio-mensagens",
       "fake-chat",
       "gerar-link",
       "info",

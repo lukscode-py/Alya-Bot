@@ -21,7 +21,7 @@ export default {
     await sendReact("🔘");
 
     const triggerCommand = (parametro) =>
-      `${prefix || PREFIX}exemplo-gatilho ${parametro}`;
+      `${prefix || PREFIX}laboratorio-gatilho ${parametro}`;
 
     const sendExample = async (label, content) => {
       try {
@@ -135,7 +135,7 @@ export default {
   footer: 'Rodapé',
   buttons: [
     {
-      buttonId: '${prefix || PREFIX}exemplo-gatilho opcao1',
+      buttonId: '${prefix || PREFIX}laboratorio-gatilho opcao1',
       buttonText: { displayText: 'Opção 1' }
     }
   ]

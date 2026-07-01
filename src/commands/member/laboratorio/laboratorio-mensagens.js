@@ -1,19 +1,16 @@
 import { PREFIX } from "../../../config.js";
 
 export default {
-  name: "exemplos-de-mensagens",
+  name: "laboratorio-mensagens",
   description:
-    "Lista todos os exemplos disponíveis de envio de mensagens para desenvolvedores",
+    "Lista as demonstrações disponíveis no laboratório de mensagens da Alya",
   commands: [
-    "exemplos-de-mensagens",
-    "exemplos",
-    "help-exemplos",
-    "exemplo-de-mensagem",
-    "exemplo-de-mensagens",
-    "enviar-exemplos",
-    "enviar-exemplo",
+    "laboratorio-mensagens",
+    "lab-mensagens",
+    "laboratorio",
+    "lab",
   ],
-  usage: `${PREFIX}exemplos-de-mensagens`,
+  usage: `${PREFIX}laboratorio-mensagens`,
   /**
    * @param {CommandHandleProps} props
    */
@@ -21,8 +18,8 @@ export default {
     await sendReact("📚");
 
     await sendReply(
-      "*📚 EXEMPLOS DISPONÍVEIS*\n\n" +
-        "Use os comandos abaixo para ver exemplos práticos de como usar os meus comandos:\n\n" +
+      "*📚 LABORATÓRIO DE MENSAGENS*\n\n" +
+        "Use os comandos abaixo para ver demonstrações práticas dos recursos de mensagem da Alya:\n\n" +
 
         "*🔊 ÁUDIO*\n" +
         `• \`${prefix}enviar-audio-de-arquivo\` - Enviar áudio de arquivo local\n` +
@@ -81,7 +78,7 @@ export default {
         "*🔘 BOTÕES E LISTAS*\n" +
         `• \`${prefix}enviar-botoes\` - Enviar mensagens com botões simples, templates e interativos\n` +
         `• \`${prefix}enviar-lista\` - Enviar mensagem em formato de lista\n` +
-        `• \`${prefix}exemplo-gatilho <parâmetro>\` - Receber o clique de botões e listas\n\n` +
+        `• \`${prefix}laboratorio-gatilho <parâmetro>\` - Receber o clique de botões e listas\n\n` +
 
         "*🧩 RICH RESPONSE*\n" +
         `• \`${prefix}enviar-texto-colorido\` - Enviar texto destacado/colorido em rich response\n` +
@@ -93,9 +90,9 @@ export default {
         "*🎯 COMO USAR*\n\n" +
         "1️⃣ Execute qualquer comando da lista acima\n" +
         "2️⃣ Observe o comportamento prático\n" +
-        "3️⃣ Veja o código fonte em `/src/commands/member/exemplos/`\n" +
-        "4️⃣ Use como base para seus próprios comandos\n\n" +
-        "*💡 Dica:* Todos os exemplos incluem explicações detalhadas e casos de uso!\n\n" +
+        "3️⃣ Veja o código fonte em `/src/commands/member/laboratorio/`\n" +
+        "4️⃣ Use como referência para seus próprios comandos\n\n" +
+        "*💡 Dica:* O laboratório inclui explicações detalhadas e casos de uso!\n\n" +
 
         "*📝 FUNÇÕES DISPONÍVEIS*\n\n" +
         "Veja o arquivo `@types/index.d.ts` para documentação completa de todas as funções disponíveis com exemplos de código!",

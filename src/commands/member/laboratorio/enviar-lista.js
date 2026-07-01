@@ -21,7 +21,7 @@ export default {
     await sendReact("📋");
 
     const triggerCommand = (parametro) =>
-      `${prefix || PREFIX}exemplo-gatilho ${parametro}`;
+      `${prefix || PREFIX}laboratorio-gatilho ${parametro}`;
 
     const sendExample = async (label, content) => {
       try {
@@ -100,7 +100,7 @@ export default {
         {
           title: 'Opção 1',
           description: 'Descrição da opção',
-          rowId: '${prefix || PREFIX}exemplo-gatilho imagem'
+          rowId: '${prefix || PREFIX}laboratorio-gatilho imagem'
         }
       ]
     }

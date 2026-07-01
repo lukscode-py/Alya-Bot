@@ -4,11 +4,11 @@ import { InvalidParameterError } from "../../../errors/index.js";
 const TRIGGERS = {
   opcao1: {
     origem: "Botões simples",
-    destino: "Opção 1 do exemplo de botões simples",
+    destino: "Opção 1 do laboratório de botões simples",
   },
   opcao2: {
     origem: "Botões simples",
-    destino: "Opção 2 do exemplo de botões simples",
+    destino: "Opção 2 do laboratório de botões simples",
   },
   respostarapida: {
     origem: "Botões de template",
@@ -31,23 +31,23 @@ const TRIGGERS = {
     destino: "Botão legado 2",
   },
   imagem: {
-    origem: "Lista de exemplos",
+    origem: "Lista do laboratório",
     destino: "Item Imagem",
   },
   video: {
-    origem: "Lista de exemplos",
+    origem: "Lista do laboratório",
     destino: "Item Vídeo",
   },
   audio: {
-    origem: "Lista de exemplos",
+    origem: "Lista do laboratório",
     destino: "Item Áudio",
   },
   botoes: {
-    origem: "Lista de exemplos",
+    origem: "Lista do laboratório",
     destino: "Item Botões",
   },
   carrossel: {
-    origem: "Lista de exemplos",
+    origem: "Lista do laboratório",
     destino: "Item Carrossel",
   },
 };
@@ -61,10 +61,10 @@ function normalizeTrigger(value) {
 }
 
 export default {
-  name: "exemplo-gatilho",
-  description: "Mostra qual botão ou item de lista acionou o comando",
-  commands: ["exemplo-gatilho", "gatilho-exemplo"],
-  usage: `${PREFIX}exemplo-gatilho <parâmetro>`,
+  name: "laboratorio-gatilho",
+  description: "Mostra qual botão ou item de lista acionou o laboratório",
+  commands: ["laboratorio-gatilho", "gatilho-laboratorio"],
+  usage: `${PREFIX}laboratorio-gatilho <parâmetro>`,
   /**
    * @param {CommandHandleProps} props
    */
@@ -73,7 +73,7 @@ export default {
 
     if (!parametro) {
       throw new InvalidParameterError(
-        `Informe o parâmetro. Exemplo: ${prefix || PREFIX}exemplo-gatilho opcao1`,
+        `Informe o parâmetro. Use: ${prefix || PREFIX}laboratorio-gatilho opcao1`,
       );
     }
 
