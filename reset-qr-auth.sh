@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script para reset da autenticação do Alya Bot
-# Autor: Dev Gui
+# Projeto: Alya Bot
 # Versão: 0.9.0-BETA
 
 echo "🤖 Alya Bot - Reset da Autenticação"

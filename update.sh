@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script de atualização automática do bot
-# Autor: Dev Gui
+# Projeto: Alya Bot
 # Versão: 1.0.0
 # Compatível com: VPS, WSL2 e Termux
 
