@@ -1,6 +1,4 @@
 import assert from "node:assert";
-import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -105,22 +103,14 @@ Stack content
       assert.strictEqual(files[0].path, "src/config.js");
     });
 
-    it("should include the supported hosts section from README in the default support file window", () => {
-      const files = resolveSupportFiles({
-        projectRoot,
-        requestedFiles: ["README.md"],
-        maxCharsPerFile: DEFAULT_SUPPORT_MAX_CHARS_PER_FILE,
-      });
+    it("should keep README free from hosting advertising", async () => {
+      const { readFile } = await import("node:fs/promises");
+      const readme = await readFile("README.md", "utf8");
 
-      assert.strictEqual(files.length, 1);
-      assert.strictEqual(files[0].path, "README.md");
-      assert.match(files[0].content, /\*\*Hosts suportadas\*\*/);
-      assert.match(files[0].content, /Bronxys/);
-      assert.match(files[0].content, /NexFuture/);
-      assert.match(files[0].content, /Speed Cloud/);
-      assert.match(files[0].content, /https:\/\/bronxyshost\.com\//);
-      assert.match(files[0].content, /https:\/\/nexfuture\.com\.br\//);
-      assert.match(files[0].content, /https:\/\/speedhosting\.cloud\//);
+      assert.match(readme, /## Instalação no Termux/);
+      assert.doesNotMatch(readme, /hosts? suportad[ao]s?/i);
+      assert.doesNotMatch(readme, /hospedagens? suportad[ao]s?/i);
+      assert.doesNotMatch(readme, /instalação nas principais hosts/i);
     });
   });
 
@@ -145,44 +135,13 @@ Stack content
       assert.ok(plan.files.includes("README.md"));
     });
 
-    it("should include README when a supported host name is mentioned directly", () => {
-      const plan = buildSupportFallbackPlan({
-        projectRoot,
-        text: "manda o link do grupo da bronxys",
-      });
+    it("should not depend on removed hosting list", async () => {
+      const { readFile } = await import("node:fs/promises");
+      const readme = await readFile("README.md", "utf8");
 
-      assert.ok(plan.files.includes("README.md"));
-    });
-
-    it("should detect supported hosts dynamically from README", () => {
-      const tempRoot = fs.mkdtempSync(
-        path.join(os.tmpdir(), "alya-support-context-"),
-      );
-
-      fs.mkdirSync(path.join(tempRoot, "src", "commands"), {
-        recursive: true,
-      });
-      fs.writeFileSync(
-        path.join(tempRoot, "README.md"),
-        `# README
-
-## Instalação nas principais hosts do Brasil
-
-**Hosts suportadas**:
-
-        | Aurora Cloud | Outra Plataforma |
-        |---------------|------------------|
-        | [Painel](https://aurora.example.com) | [Painel](https://outra.example.com) |
-`,
-      );
-
-      const plan = buildSupportFallbackPlan({
-        projectRoot: tempRoot,
-        text: "traga o link da Aurora Cloud",
-      });
-
-      assert.ok(plan.sections.includes("HOSTING_AND_PTERODACTYL"));
-      assert.ok(plan.files.includes("README.md"));
+      assert.doesNotMatch(readme, /grupo oficial/i);
+      assert.doesNotMatch(readme, /painel de hospedagem/i);
+      assert.doesNotMatch(readme, /ambientes prontos para bots/i);
     });
 
     it("should include update.sh for bot update questions", () => {
