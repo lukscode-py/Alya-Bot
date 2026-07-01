@@ -1,11 +1,3 @@
-/**
- * Funções comuns de uso geral
- * do bot. Não há
- * necessidade de modificar
- * este arquivo.
- *
- * @author Dev Gui
- */
 import { delay } from "baileys";
 import fs from "node:fs";
 import { BOT_EMOJI, TIMEOUT_IN_MILLISECONDS_BY_EVENT } from "../config.js";
@@ -17,6 +9,34 @@ import {
   onlyNumbers,
   removeFileWithTimeout,
 } from "./index.js";
+
+function cloneQuotedMessage(webMessage) {
+  return JSON.parse(JSON.stringify(webMessage));
+}
+
+function buildQuotedOptions(webMessage, quoted = true) {
+  return quoted ? { quoted: cloneQuotedMessage(webMessage) } : {};
+}
+
+function buildUrlSendOptions(webMessage, url, quoted = true) {
+  return { url, ...buildQuotedOptions(webMessage, quoted) };
+}
+
+function buildMentionOptions(mentions) {
+  return mentions?.length ? { mentions } : {};
+}
+
+function formatBotText(text) {
+  return `${BOT_EMOJI} ${text}`;
+}
+
+function formatCaption(caption) {
+  return caption ? formatBotText(caption) : "";
+}
+
+function readFileBuffer(file) {
+  return fs.readFileSync(file);
+}
 
 export function loadCommonFunctions({ socket, webMessage }) {
   const {
@@ -100,28 +120,16 @@ export function loadCommonFunctions({ socket, webMessage }) {
   const sendText = async (text, mentions) => {
     await sendTypingState();
 
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await socket.sendMessage(remoteJid, {
-      text: `${BOT_EMOJI} ${text}`,
-      ...optionalParams,
+      text: formatBotText(text),
+      ...buildMentionOptions(mentions),
     });
   };
 
   const sendEditedText = async (text, messageToEdit, mentions) => {
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await socket.sendMessage(remoteJid, {
-      text: `${BOT_EMOJI} ${text}`,
-      ...optionalParams,
+      text: formatBotText(text),
+      ...buildMentionOptions(mentions),
       edit: messageToEdit.key,
     });
   };
@@ -129,34 +137,22 @@ export function loadCommonFunctions({ socket, webMessage }) {
   const sendReply = async (text, mentions) => {
     await sendTypingState();
 
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await socket.sendMessage(
       remoteJid,
-      { text: `${BOT_EMOJI} ${text}`, ...optionalParams },
-      { quoted: JSON.parse(JSON.stringify(webMessage)) },
+      { text: formatBotText(text), ...buildMentionOptions(mentions) },
+      buildQuotedOptions(webMessage),
     );
   };
 
   const sendEditedReply = async (text, messageToEdit, mentions) => {
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await socket.sendMessage(
       remoteJid,
       {
-        text: `${BOT_EMOJI} ${text}`,
-        ...optionalParams,
+        text: formatBotText(text),
+        ...buildMentionOptions(mentions),
         edit: messageToEdit.key,
       },
-      { quoted: JSON.parse(JSON.stringify(webMessage)) },
+      buildQuotedOptions(webMessage),
     );
   };
 
@@ -236,31 +232,22 @@ export function loadCommonFunctions({ socket, webMessage }) {
   };
 
   const sendStickerFromFile = async (file, quoted = true) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
     return await socket.sendMessage(
       remoteJid,
       {
-        sticker: fs.readFileSync(file),
+        sticker: readFileBuffer(file),
       },
-      {
-        ...quotedObject,
-      },
+      buildQuotedOptions(webMessage, quoted),
     );
   };
 
   const sendStickerFromURL = async (url, quoted = true) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-
     return await socket.sendMessage(
       remoteJid,
       {
         sticker: { url },
       },
-      { url, ...quotedObject },
+      buildUrlSendOptions(webMessage, url, quoted),
     );
   };
 
@@ -270,27 +257,15 @@ export function loadCommonFunctions({ socket, webMessage }) {
     mentions = null,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await withRetry(async () => {
       return await socket.sendMessage(
         remoteJid,
         {
-          image: fs.readFileSync(file),
-          caption: caption ? `${BOT_EMOJI} ${caption}` : "",
-          ...optionalParams,
+          image: readFileBuffer(file),
+          caption: formatCaption(caption),
+          ...buildMentionOptions(mentions),
         },
-        {
-          ...quotedObject,
-        },
+        buildQuotedOptions(webMessage, quoted),
       );
     });
   };
@@ -301,25 +276,15 @@ export function loadCommonFunctions({ socket, webMessage }) {
     mentions = null,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await withRetry(async () => {
       return await socket.sendMessage(
         remoteJid,
         {
           image: { url },
-          caption: caption ? `${BOT_EMOJI} ${caption}` : "",
-          ...optionalParams,
+          caption: formatCaption(caption),
+          ...buildMentionOptions(mentions),
         },
-        { url, ...quotedObject },
+        buildUrlSendOptions(webMessage, url, quoted),
       );
     });
   };
@@ -330,27 +295,15 @@ export function loadCommonFunctions({ socket, webMessage }) {
     mentions = null,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await withRetry(async () => {
       return await socket.sendMessage(
         remoteJid,
         {
           image: buffer,
-          caption: caption ? `${BOT_EMOJI} ${caption}` : "",
-          ...optionalParams,
+          caption: formatCaption(caption),
+          ...buildMentionOptions(mentions),
         },
-        {
-          ...quotedObject,
-        },
+        buildQuotedOptions(webMessage, quoted),
       );
     });
   };
@@ -361,26 +314,14 @@ export function loadCommonFunctions({ socket, webMessage }) {
     mentions = null,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await socket.sendMessage(
       remoteJid,
       {
-        video: fs.readFileSync(file),
-        caption: caption ? `${BOT_EMOJI} ${caption}` : "",
-        ...optionalParams,
+        video: readFileBuffer(file),
+        caption: formatCaption(caption),
+        ...buildMentionOptions(mentions),
       },
-      {
-        ...quotedObject,
-      },
+      buildQuotedOptions(webMessage, quoted),
     );
   };
 
@@ -389,11 +330,7 @@ export function loadCommonFunctions({ socket, webMessage }) {
     asVoice = false,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-
-    const audioBuffer = fs.readFileSync(filePath);
+    const audioBuffer = readFileBuffer(filePath);
 
     const {
       audioPath,
@@ -417,9 +354,7 @@ export function loadCommonFunctions({ socket, webMessage }) {
         mimetype,
         ptt: asVoice,
       },
-      {
-        ...quotedObject,
-      },
+      buildQuotedOptions(webMessage, quoted),
     );
   };
 
@@ -428,10 +363,6 @@ export function loadCommonFunctions({ socket, webMessage }) {
     asVoice = false,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-
     const {
       audioPath,
       audioBuffer: processedBuffer,
@@ -454,17 +385,11 @@ export function loadCommonFunctions({ socket, webMessage }) {
         mimetype,
         ptt: asVoice,
       },
-      {
-        ...quotedObject,
-      },
+      buildQuotedOptions(webMessage, quoted),
     );
   };
 
   const sendAudioFromURL = async (url, asVoice = false, quoted = true) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -488,6 +413,7 @@ export function loadCommonFunctions({ socket, webMessage }) {
     if (asVoice) {
       await sendRecordState();
     }
+
     return await socket.sendMessage(
       remoteJid,
       {
@@ -495,9 +421,7 @@ export function loadCommonFunctions({ socket, webMessage }) {
         mimetype,
         ptt: asVoice,
       },
-      {
-        ...quotedObject,
-      },
+      buildQuotedOptions(webMessage, quoted),
     );
   };
 
@@ -507,24 +431,14 @@ export function loadCommonFunctions({ socket, webMessage }) {
     mentions = null,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await socket.sendMessage(
       remoteJid,
       {
         video: { url },
-        caption: caption ? `${BOT_EMOJI} ${caption}` : "",
-        ...optionalParams,
+        caption: formatCaption(caption),
+        ...buildMentionOptions(mentions),
       },
-      { url, ...quotedObject },
+      buildUrlSendOptions(webMessage, url, quoted),
     );
   };
 
@@ -534,26 +448,15 @@ export function loadCommonFunctions({ socket, webMessage }) {
     mentions = null,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await socket.sendMessage(
       remoteJid,
       {
-        video: fs.readFileSync(file),
-        caption: caption ? `${BOT_EMOJI} ${caption}` : "",
+        video: readFileBuffer(file),
+        caption: formatCaption(caption),
         gifPlayback: true,
-        ...optionalParams,
+        ...buildMentionOptions(mentions),
       },
-      {
-        ...quotedObject,
-      },
+      buildQuotedOptions(webMessage, quoted),
     );
   };
 
@@ -563,24 +466,15 @@ export function loadCommonFunctions({ socket, webMessage }) {
     mentions = null,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await socket.sendMessage(
       remoteJid,
       {
         video: { url },
-        caption: caption ? `${BOT_EMOJI} ${caption}` : "",
+        caption: formatCaption(caption),
         gifPlayback: true,
-        ...optionalParams,
+        ...buildMentionOptions(mentions),
       },
-      { url, ...quotedObject },
+      buildUrlSendOptions(webMessage, url, quoted),
     );
   };
 
@@ -590,26 +484,15 @@ export function loadCommonFunctions({ socket, webMessage }) {
     mentions = null,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await socket.sendMessage(
       remoteJid,
       {
         video: buffer,
-        caption: caption ? `${BOT_EMOJI} ${caption}` : "",
+        caption: formatCaption(caption),
         gifPlayback: true,
-        ...optionalParams,
+        ...buildMentionOptions(mentions),
       },
-      {
-        ...quotedObject,
-      },
+      buildQuotedOptions(webMessage, quoted),
     );
   };
 
@@ -619,19 +502,14 @@ export function loadCommonFunctions({ socket, webMessage }) {
     fileName,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
     return await socket.sendMessage(
       remoteJid,
       {
-        document: fs.readFileSync(file),
+        document: readFileBuffer(file),
         mimetype: mimetype || "application/octet-stream",
         fileName: fileName || "documento.pdf",
       },
-      {
-        ...quotedObject,
-      },
+      buildQuotedOptions(webMessage, quoted),
     );
   };
 
@@ -641,9 +519,6 @@ export function loadCommonFunctions({ socket, webMessage }) {
     fileName,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
     return await socket.sendMessage(
       remoteJid,
       {
@@ -651,7 +526,7 @@ export function loadCommonFunctions({ socket, webMessage }) {
         mimetype: mimetype || "application/octet-stream",
         fileName: fileName || "documento.pdf",
       },
-      { url, ...quotedObject },
+      buildUrlSendOptions(webMessage, url, quoted),
     );
   };
 
@@ -661,9 +536,6 @@ export function loadCommonFunctions({ socket, webMessage }) {
     fileName,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
     return await socket.sendMessage(
       remoteJid,
       {
@@ -671,9 +543,7 @@ export function loadCommonFunctions({ socket, webMessage }) {
         mimetype: mimetype || "application/octet-stream",
         fileName: fileName || "documento.pdf",
       },
-      {
-        ...quotedObject,
-      },
+      buildQuotedOptions(webMessage, quoted),
     );
   };
 
@@ -683,41 +553,24 @@ export function loadCommonFunctions({ socket, webMessage }) {
     mentions = null,
     quoted = true,
   ) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
-
-    let optionalParams = {};
-
-    if (mentions?.length) {
-      optionalParams = { mentions };
-    }
-
     return await socket.sendMessage(
       remoteJid,
       {
         video: buffer,
-        caption: caption ? `${BOT_EMOJI} ${caption}` : "",
-        ...optionalParams,
+        caption: formatCaption(caption),
+        ...buildMentionOptions(mentions),
       },
-      {
-        ...quotedObject,
-      },
+      buildQuotedOptions(webMessage, quoted),
     );
   };
 
   const sendStickerFromBuffer = async (buffer, quoted = true) => {
-    const quotedObject = quoted
-      ? { quoted: JSON.parse(JSON.stringify(webMessage)) }
-      : {};
     return await socket.sendMessage(
       remoteJid,
       {
         sticker: buffer,
       },
-      {
-        ...quotedObject,
-      },
+      buildQuotedOptions(webMessage, quoted),
     );
   };
 
