@@ -1,8 +1,3 @@
-/**
- * Testes para logger.js
- *
- * @author Dev Gui
- */
 import assert from "node:assert";
 import { afterEach, beforeEach, describe, it, mock } from "node:test";
 import * as logger from "../utils/logger.js";

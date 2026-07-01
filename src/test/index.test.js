@@ -1,8 +1,3 @@
-/**
- * Testes para index.js (funções utilitárias)
- *
- * @author Dev Gui
- */
 import assert from "node:assert";
 import { describe, it } from "node:test";
 import * as utils from "../utils/index.js";

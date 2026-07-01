@@ -1,8 +1,3 @@
-/**
- * Testes para badMacHandler.js
- *
- * @author Dev Gui
- */
 import assert from "node:assert";
 import { beforeEach, describe, it } from "node:test";
 import { BadMacHandler, badMacHandler } from "../utils/badMacHandler.js";
