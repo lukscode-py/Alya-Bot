@@ -1,9 +1,3 @@
-/**
- * Funções úteis para trabalhar
- * com dados.
- *
- * @author Dev Gui
- */
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,14 +23,26 @@ const PREFIX_GROUPS_FILE = "prefix-groups";
 const RESTRICTED_MESSAGES_FILE = "restricted-messages";
 const WELCOME_GROUPS_FILE = "welcome-groups";
 
+function resolveDatabaseFile(jsonFile) {
+  return path.resolve(databasePath, `${jsonFile}.json`);
+}
+
+function ensureDatabaseDirectory() {
+  if (!fs.existsSync(databasePath)) {
+    fs.mkdirSync(databasePath, { recursive: true });
+  }
+}
+
 function createIfNotExists(fullPath, formatIfNotExists = []) {
+  ensureDatabaseDirectory();
+
   if (!fs.existsSync(fullPath)) {
-    fs.writeFileSync(fullPath, JSON.stringify(formatIfNotExists));
+    fs.writeFileSync(fullPath, JSON.stringify(formatIfNotExists), "utf8");
   }
 }
 
 function readJSON(jsonFile, formatIfNotExists = []) {
-  const fullPath = path.resolve(databasePath, `${jsonFile}.json`);
+  const fullPath = resolveDatabaseFile(jsonFile);
 
   createIfNotExists(fullPath, formatIfNotExists);
 
@@ -44,15 +50,77 @@ function readJSON(jsonFile, formatIfNotExists = []) {
 }
 
 function writeJSON(jsonFile, data, formatIfNotExists = []) {
-  const fullPath = path.resolve(databasePath, `${jsonFile}.json`);
+  const fullPath = resolveDatabaseFile(jsonFile);
 
   createIfNotExists(fullPath, formatIfNotExists);
 
   fs.writeFileSync(fullPath, JSON.stringify(data, null, 2), "utf8");
 }
 
+function readList(jsonFile) {
+  const data = readJSON(jsonFile, []);
+
+  return Array.isArray(data) ? data : [];
+}
+
+function writeList(jsonFile, data) {
+  writeJSON(jsonFile, data, []);
+}
+
+function readObject(jsonFile) {
+  const data = readJSON(jsonFile, {});
+
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return {};
+  }
+
+  return data;
+}
+
+function writeObject(jsonFile, data) {
+  writeJSON(jsonFile, data, {});
+}
+
+function activateListItem(jsonFile, item) {
+  const items = readList(jsonFile);
+
+  if (!items.includes(item)) {
+    items.push(item);
+  }
+
+  writeList(jsonFile, items);
+}
+
+function deactivateListItem(jsonFile, item) {
+  const items = readList(jsonFile);
+  const index = items.indexOf(item);
+
+  if (index === -1) {
+    return;
+  }
+
+  items.splice(index, 1);
+  writeList(jsonFile, items);
+}
+
+function isActiveListItem(jsonFile, item) {
+  return readList(jsonFile).includes(item);
+}
+
+function normalizeMatch(match) {
+  return match.toLocaleUpperCase();
+}
+
+function findAutoResponderItem(responses, match) {
+  const matchUpperCase = normalizeMatch(match);
+
+  return responses.find(
+    (response) => normalizeMatch(response.match) === matchUpperCase,
+  );
+}
+
 export function setAfkMember(groupId, memberId, reason) {
-  const afkGroups = readJSON(AFK_GROUPS_FILE, {});
+  const afkGroups = readObject(AFK_GROUPS_FILE);
 
   if (!afkGroups[groupId]) {
     afkGroups[groupId] = {};
@@ -60,23 +128,23 @@ export function setAfkMember(groupId, memberId, reason) {
 
   afkGroups[groupId][memberId] = reason.trim();
 
-  writeJSON(AFK_GROUPS_FILE, afkGroups, {});
+  writeObject(AFK_GROUPS_FILE, afkGroups);
 }
 
 export function getAfkReason(groupId, memberId) {
-  const afkGroups = readJSON(AFK_GROUPS_FILE, {});
+  const afkGroups = readObject(AFK_GROUPS_FILE);
 
   return afkGroups[groupId]?.[memberId] || null;
 }
 
 export function listAfkMembers(groupId) {
-  const afkGroups = readJSON(AFK_GROUPS_FILE, {});
+  const afkGroups = readObject(AFK_GROUPS_FILE);
 
   return { ...(afkGroups[groupId] || {}) };
 }
 
 export function removeAfkMember(groupId, memberId) {
-  const afkGroups = readJSON(AFK_GROUPS_FILE, {});
+  const afkGroups = readObject(AFK_GROUPS_FILE);
 
   if (!afkGroups[groupId]?.[memberId]) {
     return false;
@@ -88,265 +156,106 @@ export function removeAfkMember(groupId, memberId) {
     delete afkGroups[groupId];
   }
 
-  writeJSON(AFK_GROUPS_FILE, afkGroups, {});
+  writeObject(AFK_GROUPS_FILE, afkGroups);
 
   return true;
 }
 
 export function activateExitGroup(groupId) {
-  const filename = EXIT_GROUPS_FILE;
-
-  const exitGroups = readJSON(filename);
-
-  if (!exitGroups.includes(groupId)) {
-    exitGroups.push(groupId);
-  }
-
-  writeJSON(filename, exitGroups);
+  activateListItem(EXIT_GROUPS_FILE, groupId);
 }
 
 export function deactivateExitGroup(groupId) {
-  const filename = EXIT_GROUPS_FILE;
-
-  const exitGroups = readJSON(filename);
-
-  const index = exitGroups.indexOf(groupId);
-
-  if (index === -1) {
-    return;
-  }
-
-  exitGroups.splice(index, 1);
-
-  writeJSON(filename, exitGroups);
+  deactivateListItem(EXIT_GROUPS_FILE, groupId);
 }
 
 export function isActiveExitGroup(groupId) {
-  const filename = EXIT_GROUPS_FILE;
-
-  const exitGroups = readJSON(filename);
-
-  return exitGroups.includes(groupId);
+  return isActiveListItem(EXIT_GROUPS_FILE, groupId);
 }
 
 export function activateWelcomeGroup(groupId) {
-  const filename = WELCOME_GROUPS_FILE;
-
-  const welcomeGroups = readJSON(filename);
-
-  if (!welcomeGroups.includes(groupId)) {
-    welcomeGroups.push(groupId);
-  }
-
-  writeJSON(filename, welcomeGroups);
+  activateListItem(WELCOME_GROUPS_FILE, groupId);
 }
 
 export function deactivateWelcomeGroup(groupId) {
-  const filename = WELCOME_GROUPS_FILE;
-
-  const welcomeGroups = readJSON(filename);
-
-  const index = welcomeGroups.indexOf(groupId);
-
-  if (index === -1) {
-    return;
-  }
-
-  welcomeGroups.splice(index, 1);
-
-  writeJSON(filename, welcomeGroups);
+  deactivateListItem(WELCOME_GROUPS_FILE, groupId);
 }
 
 export function isActiveWelcomeGroup(groupId) {
-  const filename = WELCOME_GROUPS_FILE;
-
-  const welcomeGroups = readJSON(filename);
-
-  return welcomeGroups.includes(groupId);
+  return isActiveListItem(WELCOME_GROUPS_FILE, groupId);
 }
 
 export function activateGroup(groupId) {
-  const filename = INACTIVE_GROUPS_FILE;
-
-  const inactiveGroups = readJSON(filename);
-
-  const index = inactiveGroups.indexOf(groupId);
-
-  if (index === -1) {
-    return;
-  }
-
-  inactiveGroups.splice(index, 1);
-
-  writeJSON(filename, inactiveGroups);
+  deactivateListItem(INACTIVE_GROUPS_FILE, groupId);
 }
 
 export function deactivateGroup(groupId) {
-  const filename = INACTIVE_GROUPS_FILE;
-
-  const inactiveGroups = readJSON(filename);
-
-  if (!inactiveGroups.includes(groupId)) {
-    inactiveGroups.push(groupId);
-  }
-
-  writeJSON(filename, inactiveGroups);
+  activateListItem(INACTIVE_GROUPS_FILE, groupId);
 }
 
 export function isActiveGroup(groupId) {
-  const filename = INACTIVE_GROUPS_FILE;
-
-  const inactiveGroups = readJSON(filename);
-
-  return !inactiveGroups.includes(groupId);
+  return !isActiveListItem(INACTIVE_GROUPS_FILE, groupId);
 }
 
 export function getAutoResponderResponse(match) {
-  const filename = AUTO_RESPONDER_FILE;
+  const responses = readList(AUTO_RESPONDER_FILE);
+  const data = findAutoResponderItem(responses, match);
 
-  const responses = readJSON(filename);
-
-  const matchUpperCase = match.toLocaleUpperCase();
-
-  const data = responses.find(
-    (response) => response.match.toLocaleUpperCase() === matchUpperCase
-  );
-
-  if (!data) {
-    return null;
-  }
-
-  return data.answer;
+  return data?.answer || null;
 }
 
 export function activateAutoResponderGroup(groupId) {
-  const filename = AUTO_RESPONDER_GROUPS_FILE;
-
-  const autoResponderGroups = readJSON(filename);
-
-  if (!autoResponderGroups.includes(groupId)) {
-    autoResponderGroups.push(groupId);
-  }
-
-  writeJSON(filename, autoResponderGroups);
+  activateListItem(AUTO_RESPONDER_GROUPS_FILE, groupId);
 }
 
 export function deactivateAutoResponderGroup(groupId) {
-  const filename = AUTO_RESPONDER_GROUPS_FILE;
-
-  const autoResponderGroups = readJSON(filename);
-
-  const index = autoResponderGroups.indexOf(groupId);
-
-  if (index === -1) {
-    return;
-  }
-
-  autoResponderGroups.splice(index, 1);
-
-  writeJSON(filename, autoResponderGroups);
+  deactivateListItem(AUTO_RESPONDER_GROUPS_FILE, groupId);
 }
 
 export function isActiveAutoResponderGroup(groupId) {
-  const filename = AUTO_RESPONDER_GROUPS_FILE;
-
-  const autoResponderGroups = readJSON(filename);
-
-  return autoResponderGroups.includes(groupId);
+  return isActiveListItem(AUTO_RESPONDER_GROUPS_FILE, groupId);
 }
 
 export function activateAntiLinkGroup(groupId) {
-  const filename = ANTI_LINK_GROUPS_FILE;
-
-  const antiLinkGroups = readJSON(filename);
-
-  if (!antiLinkGroups.includes(groupId)) {
-    antiLinkGroups.push(groupId);
-  }
-
-  writeJSON(filename, antiLinkGroups);
+  activateListItem(ANTI_LINK_GROUPS_FILE, groupId);
 }
 
 export function deactivateAntiLinkGroup(groupId) {
-  const filename = ANTI_LINK_GROUPS_FILE;
-
-  const antiLinkGroups = readJSON(filename);
-
-  const index = antiLinkGroups.indexOf(groupId);
-
-  if (index === -1) {
-    return;
-  }
-
-  antiLinkGroups.splice(index, 1);
-
-  writeJSON(filename, antiLinkGroups);
+  deactivateListItem(ANTI_LINK_GROUPS_FILE, groupId);
 }
 
 export function isActiveAntiLinkGroup(groupId) {
-  const filename = ANTI_LINK_GROUPS_FILE;
-
-  const antiLinkGroups = readJSON(filename);
-
-  return antiLinkGroups.includes(groupId);
+  return isActiveListItem(ANTI_LINK_GROUPS_FILE, groupId);
 }
 
 export function activateAutoStickerGroup(groupId) {
-  const filename = AUTO_STICKER_GROUPS_FILE;
-
-  const autoStickerGroups = readJSON(filename);
-
-  if (!autoStickerGroups.includes(groupId)) {
-    autoStickerGroups.push(groupId);
-  }
-
-  writeJSON(filename, autoStickerGroups);
+  activateListItem(AUTO_STICKER_GROUPS_FILE, groupId);
 }
 
 export function deactivateAutoStickerGroup(groupId) {
-  const filename = AUTO_STICKER_GROUPS_FILE;
-
-  const autoStickerGroups = readJSON(filename);
-
-  const index = autoStickerGroups.indexOf(groupId);
-
-  if (index === -1) {
-    return;
-  }
-
-  autoStickerGroups.splice(index, 1);
-
-  writeJSON(filename, autoStickerGroups);
+  deactivateListItem(AUTO_STICKER_GROUPS_FILE, groupId);
 }
 
 export function isActiveAutoStickerGroup(groupId) {
-  const filename = AUTO_STICKER_GROUPS_FILE;
-
-  const autoStickerGroups = readJSON(filename);
-
-  return autoStickerGroups.includes(groupId);
+  return isActiveListItem(AUTO_STICKER_GROUPS_FILE, groupId);
 }
 
 export function muteMember(groupId, memberId) {
-  const filename = MUTE_FILE;
-
-  const mutedMembers = readJSON(filename, JSON.stringify({}));
+  const mutedMembers = readObject(MUTE_FILE);
 
   if (!mutedMembers[groupId]) {
     mutedMembers[groupId] = [];
   }
 
-  if (!mutedMembers[groupId]?.includes(memberId)) {
+  if (!mutedMembers[groupId].includes(memberId)) {
     mutedMembers[groupId].push(memberId);
   }
 
-  writeJSON(filename, mutedMembers);
+  writeObject(MUTE_FILE, mutedMembers);
 }
 
 export function unmuteMember(groupId, memberId) {
-  const filename = MUTE_FILE;
-
-  const mutedMembers = readJSON(filename, JSON.stringify({}));
+  const mutedMembers = readObject(MUTE_FILE);
 
   if (!mutedMembers[groupId]) {
     return;
@@ -358,62 +267,33 @@ export function unmuteMember(groupId, memberId) {
     mutedMembers[groupId].splice(index, 1);
   }
 
-  writeJSON(filename, mutedMembers);
+  writeObject(MUTE_FILE, mutedMembers);
 }
 
 export function checkIfMemberIsMuted(groupId, memberId) {
-  const filename = MUTE_FILE;
+  const mutedMembers = readObject(MUTE_FILE);
 
-  const mutedMembers = readJSON(filename, JSON.stringify({}));
-
-  if (!mutedMembers[groupId]) {
-    return false;
-  }
-
-  return mutedMembers[groupId]?.includes(memberId);
+  return Boolean(mutedMembers[groupId]?.includes(memberId));
 }
 
 export function activateOnlyAdmins(groupId) {
-  const filename = ONLY_ADMINS_FILE;
-
-  const onlyAdminsGroups = readJSON(filename, []);
-
-  if (!onlyAdminsGroups.includes(groupId)) {
-    onlyAdminsGroups.push(groupId);
-  }
-
-  writeJSON(filename, onlyAdminsGroups);
+  activateListItem(ONLY_ADMINS_FILE, groupId);
 }
 
 export function deactivateOnlyAdmins(groupId) {
-  const filename = ONLY_ADMINS_FILE;
-
-  const onlyAdminsGroups = readJSON(filename, []);
-
-  const index = onlyAdminsGroups.indexOf(groupId);
-  if (index === -1) {
-    return;
-  }
-
-  onlyAdminsGroups.splice(index, 1);
-
-  writeJSON(filename, onlyAdminsGroups);
+  deactivateListItem(ONLY_ADMINS_FILE, groupId);
 }
 
 export function isActiveOnlyAdmins(groupId) {
-  const filename = ONLY_ADMINS_FILE;
-
-  const onlyAdminsGroups = readJSON(filename, []);
-
-  return onlyAdminsGroups.includes(groupId);
+  return isActiveListItem(ONLY_ADMINS_FILE, groupId);
 }
 
 export function readGroupRestrictions() {
-  return readJSON(GROUP_RESTRICTIONS_FILE, {});
+  return readObject(GROUP_RESTRICTIONS_FILE);
 }
 
 export function saveGroupRestrictions(restrictions) {
-  writeJSON(GROUP_RESTRICTIONS_FILE, restrictions, {});
+  writeObject(GROUP_RESTRICTIONS_FILE, restrictions);
 }
 
 export function isActiveGroupRestriction(groupId, restriction) {
@@ -451,26 +331,21 @@ export function readRestrictedMessageTypes() {
 }
 
 export function setPrefix(groupJid, prefix) {
-  const filename = PREFIX_GROUPS_FILE;
-
-  const prefixGroups = readJSON(filename, {});
+  const prefixGroups = readObject(PREFIX_GROUPS_FILE);
 
   prefixGroups[groupJid] = prefix;
 
-  writeJSON(filename, prefixGroups, {});
+  writeObject(PREFIX_GROUPS_FILE, prefixGroups);
 }
 
 export function getPrefix(groupJid) {
-  const filename = PREFIX_GROUPS_FILE;
-
-  const prefixGroups = readJSON(filename, {});
+  const prefixGroups = readObject(PREFIX_GROUPS_FILE);
 
   return prefixGroups[groupJid] || PREFIX;
 }
 
 export function listAutoResponderItems() {
-  const filename = AUTO_RESPONDER_FILE;
-  const responses = readJSON(filename, []);
+  const responses = readList(AUTO_RESPONDER_FILE);
 
   return responses.map((item, index) => ({
     key: index + 1,
@@ -480,16 +355,9 @@ export function listAutoResponderItems() {
 }
 
 export function addAutoResponderItem(match, answer) {
-  const filename = AUTO_RESPONDER_FILE;
-  const responses = readJSON(filename, []);
+  const responses = readList(AUTO_RESPONDER_FILE);
 
-  const matchUpperCase = match.toLocaleUpperCase();
-
-  const existingItem = responses.find(
-    (response) => response.match.toLocaleUpperCase() === matchUpperCase
-  );
-
-  if (existingItem) {
+  if (findAutoResponderItem(responses, match)) {
     return false;
   }
 
@@ -498,15 +366,13 @@ export function addAutoResponderItem(match, answer) {
     answer: answer.trim(),
   });
 
-  writeJSON(filename, responses, []);
+  writeList(AUTO_RESPONDER_FILE, responses);
 
   return true;
 }
 
 export function removeAutoResponderItemByKey(key) {
-  const filename = AUTO_RESPONDER_FILE;
-  const responses = readJSON(filename, []);
-
+  const responses = readList(AUTO_RESPONDER_FILE);
   const index = key - 1;
 
   if (index < 0 || index >= responses.length) {
@@ -514,26 +380,21 @@ export function removeAutoResponderItemByKey(key) {
   }
 
   responses.splice(index, 1);
-
-  writeJSON(filename, responses, []);
+  writeList(AUTO_RESPONDER_FILE, responses);
 
   return true;
 }
 
 export function setSpiderApiToken(token) {
-  const filename = CONFIG_FILE;
-
-  const config = readJSON(filename, {});
+  const config = readObject(CONFIG_FILE);
 
   config.spider_api_token = token;
 
-  writeJSON(filename, config, {});
+  writeObject(CONFIG_FILE, config);
 }
 
 export function getSpiderApiToken() {
-  const filename = CONFIG_FILE;
-
-  const config = readJSON(filename, {});
+  const config = readObject(CONFIG_FILE);
 
   return config.spider_api_token || SPIDER_API_TOKEN;
 }
