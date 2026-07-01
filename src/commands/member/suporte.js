@@ -64,7 +64,7 @@ Faça sua pergunta sobre mim que eu te ajudarei!
 
 - ${PREFIX}suporte bot desliga sozinho
 - ${PREFIX}suporte como instalar no Termux?
-- ${PREFIX}suporte erro 401 API Spider X
+- ${PREFIX}suporte erro 401 API externa
 - Envie uma imagem com ${PREFIX}suporte para análise visual`,
       );
 

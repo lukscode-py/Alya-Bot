@@ -5,10 +5,48 @@ import { InvalidParameterError } from "../../errors/index.js";
 import { brat } from "../../services/spider-x-api.js";
 import { processStaticSticker } from "../../services/sticker.js";
 import { getRandomName } from "../../utils/index.js";
+import { fetchRemoteCommandResource } from "../../utils/remote-service.js";
+
+function readBratText(fullArgs) {
+  return fullArgs.trim();
+}
+
+function validateBratText(text) {
+  if (!text) {
+    throw new InvalidParameterError(
+      "Você precisa informar o texto que deseja transformar em imagem.",
+    );
+  }
+}
+
+function buildStickerMetadata({ webMessage, userLid }) {
+  const username =
+    webMessage.pushName || webMessage.notifyName || userLid.replace(/@lid/, "");
+
+  return {
+    username,
+    botName: `${BOT_EMOJI} ${BOT_NAME}`,
+  };
+}
+
+async function saveRemoteImage(response) {
+  const inputPath = path.resolve(TEMP_DIR, getRandomName("png"));
+  const imageBuffer = Buffer.from(await response.arrayBuffer());
+
+  await fs.promises.writeFile(inputPath, imageBuffer);
+
+  return inputPath;
+}
+
+function removeFileIfExists(filePath) {
+  if (filePath && fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+}
 
 export default {
   name: "brat",
-  description: "Gera imagem no estilo brat com o texto informado.",
+  description: "Gera uma figurinha estática no estilo brat.",
   commands: ["brat"],
   usage: `${PREFIX}brat Nem judas mentiu tanto assim ☠️`,
   /**
@@ -23,24 +61,19 @@ export default {
     webMessage,
     userLid,
   }) => {
-    if (!fullArgs.length) {
-      throw new InvalidParameterError(
-        "Você precisa informar o texto que deseja transformar em imagem.",
-      );
-    }
+    const text = readBratText(fullArgs);
 
+    validateBratText(text);
     await sendWaitReact();
 
-    const url = await brat(fullArgs.trim());
+    const url = await brat(text);
+    const response = await fetchRemoteCommandResource({
+      url,
+      commandName: "brat",
+      sendErrorReply,
+    });
 
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      const data = await response.json();
-
-      await sendErrorReply(
-        `Ocorreu um erro ao executar uma chamada remota para a Spider X API no comando brat!\n      \n📄 *Detalhes*: ${data.message}`,
-      );
+    if (!response) {
       return;
     }
 
@@ -48,34 +81,17 @@ export default {
     let finalStickerPath = null;
 
     try {
-      inputPath = path.resolve(TEMP_DIR, getRandomName("png"));
-
-      const imageBuffer = Buffer.from(await response.arrayBuffer());
-      await fs.promises.writeFile(inputPath, imageBuffer);
-
-      const username =
-        webMessage.pushName ||
-        webMessage.notifyName ||
-        userLid.replace(/@lid/, "");
-
-      const metadata = {
-        username,
-        botName: `${BOT_EMOJI} ${BOT_NAME}`,
-      };
-
-      finalStickerPath = await processStaticSticker(inputPath, metadata);
+      inputPath = await saveRemoteImage(response);
+      finalStickerPath = await processStaticSticker(
+        inputPath,
+        buildStickerMetadata({ webMessage, userLid }),
+      );
 
       await sendSuccessReact();
-
       await sendStickerFromFile(finalStickerPath);
     } finally {
-      if (inputPath && fs.existsSync(inputPath)) {
-        fs.unlinkSync(inputPath);
-      }
-
-      if (finalStickerPath && fs.existsSync(finalStickerPath)) {
-        fs.unlinkSync(finalStickerPath);
-      }
+      removeFileIfExists(inputPath);
+      removeFileIfExists(finalStickerPath);
     }
   },
 };

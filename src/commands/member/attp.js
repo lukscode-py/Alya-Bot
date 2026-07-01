@@ -1,10 +1,23 @@
 import { PREFIX } from "../../config.js";
 import { InvalidParameterError } from "../../errors/index.js";
 import { attp } from "../../services/spider-x-api.js";
+import { fetchRemoteCommandResource } from "../../utils/remote-service.js";
+
+function readStickerText(args) {
+  return args.join(" ").trim();
+}
+
+function validateStickerText(text) {
+  if (!text) {
+    throw new InvalidParameterError(
+      "Você precisa informar o texto que deseja transformar em figurinha.",
+    );
+  }
+}
 
 export default {
   name: "attp",
-  description: "Faz figurinhas animadas de texto.",
+  description: "Gera figurinha animada com o texto informado.",
   commands: ["attp"],
   usage: `${PREFIX}attp teste`,
   /**
@@ -17,31 +30,23 @@ export default {
     sendSuccessReact,
     sendErrorReply,
   }) => {
-    if (!args.length) {
-      throw new InvalidParameterError(
-        "Você precisa informar o texto que deseja transformar em figurinha."
-      );
-    }
+    const text = readStickerText(args);
 
+    validateStickerText(text);
     await sendWaitReact();
 
-    const url = await attp(args[0].trim());
+    const url = await attp(text);
+    const response = await fetchRemoteCommandResource({
+      url,
+      commandName: "attp",
+      sendErrorReply,
+    });
 
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      const data = await response.json();
-
-      await sendErrorReply(
-        `Ocorreu um erro ao executar uma chamada remota para a Spider X API no comando attp!
-      
-📄 *Detalhes*: ${data.message}`
-      );
+    if (!response) {
       return;
     }
 
     await sendSuccessReact();
-
     await sendStickerFromURL(url);
   },
 };

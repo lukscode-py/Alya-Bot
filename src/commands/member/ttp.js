@@ -1,10 +1,23 @@
 import { PREFIX } from "../../config.js";
 import { InvalidParameterError } from "../../errors/index.js";
 import { ttp } from "../../services/spider-x-api.js";
+import { fetchRemoteCommandResource } from "../../utils/remote-service.js";
+
+function readStickerText(args) {
+  return args.join(" ").trim();
+}
+
+function validateStickerText(text) {
+  if (!text) {
+    throw new InvalidParameterError(
+      "Você precisa informar o texto que deseja transformar em figurinha.",
+    );
+  }
+}
 
 export default {
   name: "ttp",
-  description: "Faz figurinhas de texto.",
+  description: "Gera figurinha estática com o texto informado.",
   commands: ["ttp"],
   usage: `${PREFIX}ttp teste`,
   /**
@@ -17,31 +30,23 @@ export default {
     sendSuccessReact,
     sendErrorReply,
   }) => {
-    if (!args.length) {
-      throw new InvalidParameterError(
-        "Você precisa informar o texto que deseja transformar em figurinha.",
-      );
-    }
+    const text = readStickerText(args);
 
+    validateStickerText(text);
     await sendWaitReact();
 
-    const url = await ttp(args[0].trim());
+    const url = await ttp(text);
+    const response = await fetchRemoteCommandResource({
+      url,
+      commandName: "ttp",
+      sendErrorReply,
+    });
 
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      const data = await response.json();
-
-      await sendErrorReply(
-        `Ocorreu um erro ao executar uma chamada remota para a Spider X API no comando ttp!
-      
-📄 *Detalhes*: ${data.message}`,
-      );
+    if (!response) {
       return;
     }
 
     await sendSuccessReact();
-
     await sendStickerFromURL(url);
   },
 };
