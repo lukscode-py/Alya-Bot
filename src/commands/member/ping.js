@@ -1,37 +1,31 @@
-/**
- * Melhorado por: Mkg
- *
- * @author Dev Gui
- */
 import { PREFIX } from "../../config.js";
+import { formatProcessUptime } from "../../utils/member-command-utils.js";
+
+function resolvePingResponse(fullMessage) {
+  return String(fullMessage || "").slice(1).startsWith("ping")
+    ? "🏓 Pong!"
+    : "🏓 Ping!";
+}
 
 export default {
   name: "ping",
   description:
-    "Verificar se o bot está online, o tempo de resposta e o tempo de atividade.",
+    "Verifica se a Alya está online, o tempo de resposta e o tempo de atividade.",
   commands: ["ping", "pong"],
   usage: `${PREFIX}ping`,
   /**
    * @param {CommandHandleProps} props
    */
   handle: async ({ sendReply, sendReact, startProcess, fullMessage }) => {
-    const response = fullMessage.slice(1).startsWith("ping")
-      ? "🏓 Pong!"
-      : "🏓 Ping!";
+    const response = resolvePingResponse(fullMessage);
+    const latencyMs = Date.now() - startProcess;
+    const uptime = formatProcessUptime(process.uptime());
 
     await sendReact("🏓");
 
-    const uptime = process.uptime();
-
-    const h = Math.floor(uptime / 3600);
-    const m = Math.floor((uptime % 3600) / 60);
-    const s = Math.floor(uptime % 60);
-
-    const ping = Date.now() - startProcess;
-
     await sendReply(`${response}
 
-📶 Velocidade de resposta: ${ping}ms
-⏱️ Uptime: ${h}h ${m}m ${s}s`);
+📶 Velocidade de resposta: ${latencyMs}ms
+⏱️ Uptime: ${uptime}`);
   },
 };
