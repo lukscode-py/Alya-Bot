@@ -1,8 +1,3 @@
-/**
- * Funções diversas.
- *
- * @author Dev Gui
- */
 import axios from "axios";
 import { delay, downloadContentFromMessage } from "baileys";
 import { writeFile } from "fs/promises";
@@ -13,6 +8,19 @@ import readline from "node:readline";
 import { pathToFileURL } from "node:url";
 import { ASSETS_DIR, COMMANDS_DIR, PREFIX, TEMP_DIR } from "../config.js";
 import { errorLog } from "./logger.js";
+
+const INTERACTIVE_RESPONSE_ID_KEYS = [
+  "id",
+  "selectedId",
+  "selectedRowId",
+  "rowId",
+  "buttonId",
+  "button_id",
+];
+
+const COMMAND_ARGUMENT_SEPARATORS = ["\\", "|", "/"];
+const COMMAND_FILE_EXTENSIONS = new Set([".js", ".ts"]);
+const RANDOM_DELAY_VALUES_MS = [1000, 2000, 3000];
 
 export function question(message) {
   const rl = readline.createInterface({
@@ -32,17 +40,16 @@ function extractInteractiveResponseId(paramsJson) {
     const params = JSON.parse(paramsJson);
 
     return (
-      params.id ||
-      params.selectedId ||
-      params.selectedRowId ||
-      params.rowId ||
-      params.buttonId ||
-      params.button_id ||
+      INTERACTIVE_RESPONSE_ID_KEYS.map((key) => params[key]).find(Boolean) ||
       null
     );
   } catch {
     return null;
   }
+}
+
+function escapeRegexCharacter(character) {
+  return character.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
 }
 
 export function extractDataFromMessage(webMessage) {
@@ -107,7 +114,7 @@ export function extractDataFromMessage(webMessage) {
   const commandWithoutPrefix = command.replace(new RegExp(`^[${PREFIX}]+`), "");
 
   return {
-    args: splitByCharacters(args.join(" "), ["\\", "|", "/"]),
+    args: splitByCharacters(args.join(" "), COMMAND_ARGUMENT_SEPARATORS),
     commandName: formatCommand(commandWithoutPrefix),
     fullArgs: args.join(" "),
     fullMessage,
@@ -121,8 +128,8 @@ export function extractDataFromMessage(webMessage) {
 }
 
 export function splitByCharacters(str, characters) {
-  characters = characters.map((char) => (char === "\\" ? "\\\\" : char));
-  const regex = new RegExp(`[${characters.join("")}]`);
+  const escapedCharacters = characters.map(escapeRegexCharacter);
+  const regex = new RegExp(`[${escapedCharacters.join("")}]`);
 
   return str
     .split(regex)
@@ -137,7 +144,7 @@ export function formatCommand(text) {
 }
 
 export function isGroup(remoteJid) {
-  return remoteJid.endsWith("@g.us");
+  return Boolean(remoteJid?.endsWith("@g.us"));
 }
 
 export function onlyLettersAndNumbers(text) {
@@ -220,11 +227,15 @@ export function readDirectoryRecursive(dir) {
 
   for (const item of list) {
     const itemPath = path.join(dir, item.name);
+
     if (item.isDirectory()) {
       results.push(...readDirectoryRecursive(itemPath));
-    } else if (
+      continue;
+    }
+
+    if (
       !item.name.startsWith("_") &&
-      (item.name.endsWith(".js") || item.name.endsWith(".ts"))
+      COMMAND_FILE_EXTENSIONS.has(path.extname(item.name))
     ) {
       results.push(itemPath);
     }
@@ -316,25 +327,21 @@ export function toUserJid(value) {
   return `${onlyNumbers(value)}@s.whatsapp.net`;
 }
 
-export function getBuffer(url, options) {
-  return new Promise((resolve, reject) => {
-    axios({
-      method: "get",
-      url,
-      headers: {
-        DNT: 1,
-        "Upgrade-Insecure-Request": 1,
-        range: "bytes=0-",
-      },
-      ...options,
-      responseType: "arraybuffer",
-      proxy: options?.proxy || false,
-    })
-      .then((res) => {
-        resolve(res.data);
-      })
-      .catch(reject);
+export async function getBuffer(url, options = {}) {
+  const response = await axios({
+    method: "get",
+    url,
+    headers: {
+      DNT: 1,
+      "Upgrade-Insecure-Request": 1,
+      range: "bytes=0-",
+    },
+    ...options,
+    responseType: "arraybuffer",
+    proxy: options?.proxy || false,
   });
+
+  return response.data;
 }
 
 export function getRandomNumber(min, max) {
@@ -460,8 +467,11 @@ export async function getImageBuffer(url, options = {}) {
 }
 
 export async function randomDelay() {
-  const values = [1000, 2000, 3000];
-  return await delay(values[getRandomNumber(0, values.length - 1)]);
+  return await delay(
+    RANDOM_DELAY_VALUES_MS[
+      getRandomNumber(0, RANDOM_DELAY_VALUES_MS.length - 1)
+    ],
+  );
 }
 
 export function isAtLeastMinutesInPast(timestamp, minimumMinutes = 5) {
@@ -493,7 +503,7 @@ export function extractUserLid(data) {
       if (parsed.id) {
         return parsed.id;
       }
-    } catch (e) {
+    } catch {
       return data;
     }
   }
