@@ -55,15 +55,15 @@
  *
  * Abra a pasta "assets"
  * Depois, abra a pasta "images"
- * Substitua a imagem "takeshi-bot.png" por outra de sua preferência!
- * Só não esqueça de manter o nome "takeshi-bot.png"
+ * Substitua a imagem "banner.png" por outra de sua preferência!
+ * Só não esqueça de manter o nome "banner.png"
  *
  * Ou se preferir, digite <prefixo>set-menu-image mencionando
  * imagem que deseja definir como foto do menu.
  *
  * ---------------- 🚀 IMPORTANTE 🚀 ----------------
  *
- * Leia o tutorial completo em: https://github.com/guiireal/takeshi-bot?tab=readme-ov-file#instala%C3%A7%C3%A3o-no-termux-
+ * Leia o tutorial completo em: https://github.com/lukscode-py/Alya-Bot?tab=readme-ov-file#instala%C3%A7%C3%A3o-no-termux-
  *
  * Não pule etapas! Leia-o completo, pois ele é muito importante para você entender como o bot funciona!
  *

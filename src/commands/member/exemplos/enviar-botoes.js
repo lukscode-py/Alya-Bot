@@ -70,7 +70,7 @@ export default {
           index: 2,
           urlButton: {
             displayText: "Abrir site",
-            url: "https://github.com/guiireal",
+            url: "https://github.com/lukscode-py",
           },
         },
         {
@@ -146,7 +146,7 @@ export default {
         "• `useLegacyButtons: true` força o formato antigo `buttonsMessage`\n" +
         "• `templateButtons` permite resposta rápida, URL e chamada\n" +
         "• `interactiveButtons` usa native flow e normalmente precisa de `viewOnce: true`\n" +
-        "⚠️ Importante: a baileys do Takeshi foi modificada para suportar esses formatos!",
+        "⚠️ Importante: a Baileys usada pela Alya foi ajustada para suportar esses formatos!",
       quoted: webMessage,
     });
   },

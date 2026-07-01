@@ -1,6 +1,6 @@
 import { delay } from "baileys";
 import path from "node:path";
-import { ASSETS_DIR, PREFIX } from "../../../config.js";
+import { ASSETS_DIR, BOT_BANNER_PATH, PREFIX } from "../../../config.js";
 
 export default {
   name: "enviar-imagem-de-arquivo",
@@ -41,8 +41,8 @@ export default {
     await delay(3000);
 
     await sendImageFromFile(
-      path.join(ASSETS_DIR, "images", "takeshi-bot.png"),
-      "Logo do Takeshi Bot!"
+      BOT_BANNER_PATH,
+      "Logo da Alya Bot!"
     );
 
     await delay(3000);
@@ -52,8 +52,8 @@ export default {
     await delay(3000);
 
     await sendImageFromFile(
-      path.join(ASSETS_DIR, "images", "takeshi-bot.png"),
-      `Logo do Takeshi Bot para você @${userLid.split("@")[0]}!`,
+      BOT_BANNER_PATH,
+      `Logo da Alya Bot para você @${userLid.split("@")[0]}!`,
       [userLid]
     );
 

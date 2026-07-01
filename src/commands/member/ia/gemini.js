@@ -5,7 +5,7 @@ import { gemini } from "../../../services/spider-x-api.js";
 export default {
   name: "gemini",
   description: "Use a inteligência artificial da Google Gemini!",
-  commands: ["gemini", "takeshi"],
+  commands: ["gemini", "alya"],
   usage: `${PREFIX}gemini com quantos paus se faz uma canoa?`,
   /**
    * @param {CommandHandleProps} props

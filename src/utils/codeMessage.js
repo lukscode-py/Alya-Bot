@@ -69,7 +69,7 @@ export function buildRichCodeResponse({
   language = "javascript",
   code,
   footer,
-  prefix = "takeshi-code",
+  prefix = "alya-code",
 }) {
   const submessages = [
     title ? makeTextSubmessage(title) : null,
@@ -96,7 +96,7 @@ export async function sendRichCodeMessage(
   return sendRichResponseMessage(socket, remoteJid, richResponse, quoted);
 }
 
-export function buildRichResponse(submessages, prefix = "takeshi-code") {
+export function buildRichResponse(submessages, prefix = "alya-code") {
   return {
     messageType: 1,
     submessages,
@@ -200,7 +200,7 @@ function buildBotMetadata(extraCapabilities = []) {
       premiumModelStatus: "AVAILABLE",
     },
     botAgeCollectionMetadata: {},
-    botResponseId: buildResponseId("takeshi-code"),
+    botResponseId: buildResponseId("alya-code"),
     verificationMetadata: {
       proofs: [],
     },

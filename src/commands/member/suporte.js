@@ -8,9 +8,9 @@ import { getRandomName } from "../../utils/index.js";
 
 export default {
   name: "suporte",
-  description: "Suporte inteligente do Takeshi usando IA treinada",
+  description: "Suporte inteligente da Alya usando IA treinada",
   commands: ["suporte", "help", "ajuda"],
-  usage: `${PREFIX}suporte como instalar o Takeshi no Termux?
+  usage: `${PREFIX}suporte como instalar a Alya no Termux?
 
 Você também pode enviar uma imagem com o comando ${PREFIX}suporte
 
@@ -56,7 +56,7 @@ Você também pode escrever o texto e responder a mensagem com o comando ${PREFI
       await sendReact(BOT_EMOJI);
 
       await sendReply(
-        `*Takeshi Suporte*
+        `*Alya Suporte*
         
 Faça sua pergunta sobre mim que eu te ajudarei!
   
@@ -110,10 +110,10 @@ Faça sua pergunta sobre mim que eu te ajudarei!
     const messages = [
       {
         role: "system",
-        content: `Você é um assistente especializado em suporte técnico do Takeshi Bot.
+        content: `Você é um assistente especializado em suporte técnico da Alya Bot.
 
 Responda apenas assuntos relacionados a: tecnologia, programação, desenvolvimento de bots, inteligência artificial, 
-machine learning ou assuntos relacionados ao Takeshi Bot.
+machine learning ou assuntos relacionados à Alya Bot.
 
 Responda apenas em português do Brasil.
 Seja direto e objetivo nas respostas, salvo se o usuário solicitar explicações mais aprofundadas.
@@ -128,7 +128,7 @@ Evite palavras de enchimento: "importante", "crucial", "fundamental", "robusto",
 Nunca responda de forma genérica quando uma resposta específica é possível. Se a pergunta for vaga, interprete da forma mais útil e responda com substância, não peça esclarecimentos desnecessários. 
 Use exemplos concretos quando ajudar a explicar algo. Se tiver uma opinião sobre o assunto, diga, não fique em cima do muro.
 
-Quando receber imagens, analise o conteúdo visual primeiro e interprete-o considerando o contexto técnico do Takeshi Bot.
+Quando receber imagens, analise o conteúdo visual primeiro e interprete-o considerando o contexto técnico da Alya Bot.
 
 Se alguém te pedir o link de alguma Host, envie as que você já conhece, 
 sem mencionar Pterodactyl, pois os iniciantes não sabem o que é (exceto se perguntarem sobre)!`,

@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { ASSETS_DIR, PREFIX } from "../../config.js";
+import { BOT_BANNER_PATH, PREFIX, ROOT_DIR } from "../../config.js";
 import { InvalidParameterError } from "../../errors/index.js";
 import { errorLog } from "../../utils/logger.js";
 
@@ -34,12 +34,12 @@ export default {
     }
 
     try {
-      const menuImagePath = path.join(ASSETS_DIR, "images", "takeshi-bot.png");
+      const menuImagePath = BOT_BANNER_PATH;
 
       let backupPath = "";
 
       if (fs.existsSync(menuImagePath)) {
-        backupPath = path.join(ASSETS_DIR, "images", "takeshi-bot-backup.png");
+        backupPath = path.join(ROOT_DIR, "banner-backup.png");
 
         fs.copyFileSync(menuImagePath, backupPath);
       }

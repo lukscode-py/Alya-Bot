@@ -1,6 +1,6 @@
 {
   "name": "alya-bot",
-  "version": "8.7.0",
+  "version": "0.0.1",
   "description": "Alya Bot, bot de WhatsApp multifunções otimizado para uso local.",
   "main": "index.js",
   "type": "module",
@@ -13,7 +13,7 @@
     "node": ">=22.8.0"
   },
   "keywords": [],
-  "author": "",
+  "author": "Lucas Kaua",
   "license": "ISC",
   "dependencies": {
     "@cacheable/node-cache": "^3.0.0",

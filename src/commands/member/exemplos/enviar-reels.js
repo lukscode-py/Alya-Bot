@@ -19,7 +19,7 @@ const REEL_ITEMS = [
     profileIconUrl: PROFILE_PICTURE_URL,
     thumbnailUrl:
       "https://p77-sign-va.tiktokcdn.com/tos-maliva-p-0068/03fcbc862dbd4d97b857f7ca9d510d57_1728870269~tplv-tiktokx-origin.image?dr=14575&x-expires=1777388400&x-signature=WQNXZGzgRybLxYwsupPvGUXEFPc%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=my2",
-    videoUrl: "https://www.tiktok.com/@guiireal/video/7425441211613220101",
+    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
     source: "TT",
   },
   {
@@ -111,7 +111,7 @@ function buildRichResponse(submessages) {
     submessages,
     unifiedResponse: {
       data: encodeUnifiedResponseData({
-        response_id: `takeshi-reels-${Date.now()}-${randomBytes(6).toString("hex")}`,
+        response_id: `alya-reels-${Date.now()}-${randomBytes(6).toString("hex")}`,
         sections: submessages.map(buildUnifiedSection).filter(Boolean),
       }),
     },
@@ -223,7 +223,7 @@ function buildBotMetadata(sources = [], extraCapabilities = []) {
       premiumModelStatus: "AVAILABLE",
     },
     botAgeCollectionMetadata: {},
-    botResponseId: `takeshi-reels-${Date.now()}-${randomBytes(6).toString("hex")}`,
+    botResponseId: `alya-reels-${Date.now()}-${randomBytes(6).toString("hex")}`,
     verificationMetadata: {
       proofs: [],
     },

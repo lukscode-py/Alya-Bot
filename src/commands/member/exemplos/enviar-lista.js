@@ -113,7 +113,7 @@ export default {
         "• `useLegacyList: true` força o formato antigo `listMessage`\n" +
         "• Cada seção pode ter várias linhas\n" +
         "• Use `rowId` para identificar a opção escolhida\n" +
-        "⚠️ Importante: a baileys do Takeshi foi modificada para suportar listas!",
+        "⚠️ Importante: a Baileys usada pela Alya foi ajustada para suportar listas!",
       quoted: webMessage,
     });
   },

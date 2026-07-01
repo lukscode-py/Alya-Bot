@@ -5,7 +5,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Prefixo padrão dos comandos.
-export const PREFIX = "/";
+export const PREFIX = "$";
 
 // Emoji padrão usado nas respostas do bot.
 export const BOT_EMOJI = "🤍";

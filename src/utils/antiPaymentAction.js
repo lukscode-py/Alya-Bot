@@ -26,7 +26,7 @@ export function applyAntiPaymentRestriction({
  * mensagem de pagamento (inclusive as ocultas para admins), identificamos o
  * AUTOR ORIGINAL da mensagem citada e o removemos — nunca quem citou.
  *
- * Travas anti-forja (o Takeshi não tem level/staff): só age contra autor que
+ * Travas anti-forja (o Alya não tem level/staff): só age contra autor que
  * NÃO é o bot/dono, que está PRESENTE no grupo e que NÃO é admin. Uma marcação
  * forjada apontando para admin/dono ou para quem já saiu do grupo é ignorada.
  *

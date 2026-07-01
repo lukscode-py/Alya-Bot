@@ -41,7 +41,7 @@ export default {
 
     await sendImageFromURL(
       "https://api.spiderx.com.br/storage/samples/sample-image.jpg",
-      `Logo do Takeshi Bot para você ${userLid.split("@")[0]}!`,
+      `Logo da Alya Bot para você ${userLid.split("@")[0]}!`,
       [userLid]
     );
 

@@ -70,7 +70,7 @@ export default {
         "• Você pode adicionar quantos cards quiser\n" +
         "• `viewOnce: true` é obrigatório\n" +
         "• Cada card precisa de `title`, `image` e `caption`\n" +
-        "⚠️ Importante: a baileys do Takeshi foi modificada para suportar mensagens em carrossel!",
+        "⚠️ Importante: a Baileys usada pela Alya foi ajustada para suportar mensagens em carrossel!",
       quoted: webMessage,
     });
   },

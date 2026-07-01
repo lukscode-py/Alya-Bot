@@ -26,7 +26,7 @@ describe("Support Context", () => {
 
   describe("extractMarkdownSections", () => {
     it("should extract only the requested top-level sections", () => {
-      const markdown = `# TAKESHI BOT
+      const markdown = `# ALYA BOT
 
 ## PROJECT_OVERVIEW
 Overview content
@@ -128,7 +128,7 @@ Stack content
     it("should include README and Pterodactyl skill for hosting questions", () => {
       const plan = buildSupportFallbackPlan({
         projectRoot,
-        text: "onde hospedar o takeshi em pterodactyl?",
+        text: "onde hospedar a alya em pterodactyl?",
       });
 
       assert.ok(plan.sections.includes("HOSTING_AND_PTERODACTYL"));
@@ -156,7 +156,7 @@ Stack content
 
     it("should detect supported hosts dynamically from README", () => {
       const tempRoot = fs.mkdtempSync(
-        path.join(os.tmpdir(), "takeshi-support-context-"),
+        path.join(os.tmpdir(), "alya-support-context-"),
       );
 
       fs.mkdirSync(path.join(tempRoot, "src", "commands"), {

@@ -1,26 +1,27 @@
-# 🤖 Takeshi Bot
+# 🤍 Alya Bot
 
-![Takeshi Bot](./assets/images/takeshi-bot.png)
+![Alya Bot](./banner.png)
 
-[![Version](https://img.shields.io/badge/Vers%C3%A3o-8.7.0-blue)](https://github.com/guiireal/takeshi-bot)
-[![Tests](https://github.com/guiireal/takeshi-bot-private/actions/workflows/test.yml/badge.svg)](https://github.com/guiireal/takeshi-bot-private/actions/workflows/test.yml)
+[![Version](https://img.shields.io/badge/Vers%C3%A3o-0.0.1-blue)](https://github.com/lukscode-py/Alya-Bot)
 
-> Base para bots de WhatsApp multifuncional com diversos comandos prontos.
+> Base de bot de WhatsApp multifuncional criada e mantida por Lucas Kaua.
 
 [![Node.js](https://img.shields.io/badge/Node.js-24-green?logo=node.js)](https://nodejs.org/en)
 [![Baileys](https://img.shields.io/badge/Baileys-7.0.0.rc13-purple?logo=whatsapp)](https://github.com/WhiskeySockets/Baileys)
 [![FFMPEG](https://img.shields.io/badge/FFMPEG-Latest-orange?logo=ffmpeg)](https://ffmpeg.org/)
 [![Spider X API](https://img.shields.io/badge/Spider_X-API-green?logo=api)](https://api.spiderx.com.br)
 
-## Desenvolvida do zero, no vídeo
+## Origem e manutenção
 
-[CRIANDO UM BOT DE WHATSAPP DO ZERO (GUIA DEFINITIVO) - BASE COMPLETA + 6 COMANDOS - JAVASCRIPT](https://youtu.be/6zr2NYIYIyc)
+A Alya Bot é criada e mantida por Lucas Kaua, desenvolvida a partir de uma base open-source e reestruturada com identidade própria, documentação própria e evolução contínua.
+
+O projeto não deve ser apresentado como criado totalmente do zero enquanto ainda houver partes herdadas. A licença e os avisos necessários devem ser preservados em `LICENSE` e `NOTICE.md`.
 
 ![Logger](./assets/images/logger.png)
 
 ## 📋 Sumário
 
-1. [Idiomas Disponíveis](#-acesse-o-takeshi-bot-em-outros-idiomas)
+1. [Projeto](#-projeto)
 2. [Atenção](#-atenção)
 3. [Sobre o Projeto](#sobre-este-projeto)
 4. [Instalação](#instalação-no-termux)
@@ -42,13 +43,14 @@
 15. [Atualizar o bot](#atualizar-o-bot)
 16. [Testes](#testes)
 17. [Erros comuns](#erros-comuns)
-18. [Inscreva-se no canal](#inscreva-se-no-canal)
+18. [Projeto](#projeto)
 19. [Contribuindo com o projeto](#contribuindo-com-o-projeto)
 20. [Licença e Disclaimer](#licença)
 
-## 🌐 Acesse o Takeshi Bot em outros idiomas
+## 🌐 Projeto
 
-- 🇪🇸 [**Versión en Español**](https://github.com/guiireal/takeshi-bot-espanol)
+- Repositório oficial: [lukscode-py/Alya-Bot](https://github.com/lukscode-py/Alya-Bot)
+- Criador e mantenedor: Lucas Kaua
 
 ## ⚠ Atenção
 
@@ -96,13 +98,13 @@ cd ~/storage
 4 - Clone o repositório.
 
 ```sh
-git clone https://github.com/guiireal/takeshi-bot.git
+git clone https://github.com/lukscode-py/Alya-Bot.git
 ```
 
 5 - Entre na pasta que foi clonada.
 
 ```sh
-cd takeshi-bot
+cd Alya-Bot
 ```
 
 6 - Habilite permissões de leitura e escrita (faça apenas 1x esse passo).
@@ -133,7 +135,7 @@ export const PREFIX = "/";
 export const BOT_EMOJI = "🤖";
 
 // Nome do bot (mude se preferir).
-export const BOT_NAME = "Takeshi Bot";
+export const BOT_NAME = "Alya Bot";
 
 // LID do bot.
 // Para obter o LID do bot, use o comando <prefixo>lid respondendo em cima de uma mensagem do número do bot
@@ -154,7 +156,7 @@ npm start
 
 ## Instalação nas principais hosts do Brasil
 
-As principais hosts já oferecem o Takeshi como **bot padrão**, não sendo necessário nenhuma instalação manual!
+Algumas hosts brasileiras oferecem ambientes prontos para bots de WhatsApp, reduzindo a instalação manual.
 
 **Hosts suportadas**:
 
@@ -219,13 +221,13 @@ cd $env:USERPROFILE\Desktop
 6 - Clone o repositório.
 
 ```sh
-git clone https://github.com/guiireal/takeshi-bot.git
+git clone https://github.com/lukscode-py/Alya-Bot.git
 ```
 
 7 - Entre na pasta clonada.
 
 ```sh
-cd takeshi-bot
+cd Alya-Bot
 ```
 
 8 - Instale as dependências.
@@ -318,13 +320,13 @@ npm install pm2 -g
 10 - Clone o repositório do bot onde você desejar.
 
 ```sh
-git clone https://github.com/guiireal/takeshi-bot.git
+git clone https://github.com/lukscode-py/Alya-Bot.git
 ```
 
 11 - Entre na pasta clonada.
 
 ```sh
-cd takeshi-bot
+cd Alya-Bot
 ```
 
 12 - Digite o seguinte comando.
@@ -343,7 +345,7 @@ Não adicione o 9º dígito em números que não sejam de SP ou RJ.
 14 - Conecte o bot no PM2
 
 ```sh
-pm2 start npm --name "takeshi-bot" -- start
+pm2 start npm --name "Alya-Bot" -- start
 ```
 
 15 - O bot exibirá um **código de pareamento** que deve ser colocado em `dispositivos conectados` no seu WhatsApp.
@@ -375,7 +377,7 @@ pm2 start npm --name "takeshi-bot" -- start
 22 - Agora inicie ele pelo `PM2`, executando o seguinte código abaixo.
 
 ```sh
-pm2 start npm --name "takeshi-bot" -- start
+pm2 start npm --name "Alya-Bot" -- start
 ```
 
 ![tutorial-vps-8](./assets/images/tutorial-vps-8.png)
@@ -392,7 +394,7 @@ export const PREFIX = "/";
 export const BOT_EMOJI = "🤖";
 
 // Nome do bot (mude se preferir).
-export const BOT_NAME = "Takeshi Bot";
+export const BOT_NAME = "Alya Bot";
 
 // LID do bot (no caso, o que você rodará o bot).
 // Para obter o LID do bot, use o comando <prefixo>lid respondendo em cima de uma mensagem do número do bot
@@ -522,7 +524,7 @@ Obtenha sua API Key em: [https://linker.devgui.dev](https://linker.devgui.dev)
 
 ## Auto responder
 
-O Takeshi Bot possui um auto-responder embutido, edite o arquivo em `./database/auto-responder.json`:
+O Alya Bot possui um auto-responder embutido, edite o arquivo em `./database/auto-responder.json`:
 
 ```json
 [
@@ -536,7 +538,7 @@ O Takeshi Bot possui um auto-responder embutido, edite o arquivo em `./database/
     },
     {
         "match": "Qual seu nome",
-        "answer": "Meu nome é Takeshi Bot"
+        "answer": "Meu nome é Alya Bot"
     }
 ]
 ```
@@ -735,22 +737,23 @@ Abra o termux, digite `termux-setup-storage` e depois, aceite as permissões
 
 ### ⚙️ Você configura o token da Spider API, prefixo, etc e o bot não reconhece
 
-Verifique se você não tem dois Takeshi's rodando no seu celular, muitas pessoas baixam o zip e seguem o tutorial, porém, **o tutorial não explica pelo zip, e sim, pelo git clone**.
+Verifique se você não tem duas instâncias da Alya rodando no seu celular, muitas pessoas baixam o zip e seguem o tutorial, porém, **o tutorial não explica pelo zip, e sim, pelo git clone**.
 
 Geralmente as pessoas que cometem esse erro, ficam com dois bots:
 
 1. O primeiro dentro da `/sdcard`
-2. O segundo na pasta `/storage/emulated/0/Download`, que no zip fica como `takeshi-bot-main`
+2. O segundo na pasta `/storage/emulated/0/Download`, que no zip fica como `Alya-Bot-main`
 
 Você deve apagar um dos bots e tanto configurar quanto executar **apenas um**
 
-## Inscreva-se no canal
+## Projeto
 
-[![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@devgui_?sub_confirmation=1)
+- Repositório oficial: https://github.com/lukscode-py/Alya-Bot
+- Criador e mantenedor: Lucas Kaua
 
 ## Contribuindo com o projeto
 
-Embora o Takeshi seja open-source, as contribuições externas foram encerradas.
+As contribuições externas diretas da Alya Bot estão fechadas por enquanto.
 
 Com o avanço das IAs, o desafio de programar tem sido substituído pela criação de prompts. Valorizo a autoria e a identidade do projeto. Não faz sentido entrar em um ciclo de revisar códigos gerados por IA que descaracterizam a lógica que construímos ao longo do tempo, por mais que sejam bons códigos, o fator humano e a criatividade se perdem.
 Qualquer um pode criar código com IA, não há mais valor genuíno em contribuir com código, o que torna o processo de revisão e manutenção insustentável.
@@ -762,22 +765,22 @@ Usar IA não é ruim, longe disso, mas em projetos open-source, a identidade, a 
 
 ## Licença
 
-[GPL-3.0](https://github.com/guiireal/takeshi-bot/blob/main/LICENSE)
+[ISC](https://opensource.org/license/isc)
 
-Este projeto está licenciado sob a Licença Pública Geral GNU (GPL-3.0).
+Este projeto está licenciado sob a licença ISC.
 Isso significa que:
 
 - Você pode usar este código como quiser, seja para projetos pessoais ou comerciais.
 - Você pode modificar o código para adaptá-lo às suas necessidades.
 - Você pode compartilhar ou vender o código, mesmo modificado, mas precisa:
-  - Manter os créditos ao autor original (Guilherme França - Dev Gui).
-  - Tornar o código modificado disponível sob a mesma licença GPL-3.0.
+  - Preservar os avisos de licença e autoria mantidos em `LICENSE` e `NOTICE.md`.
+  - Preservar o aviso de copyright e o texto da licença ISC nas cópias.
 
 O que você não pode fazer:
 
-- Não pode transformar este código em algo proprietário (fechado) e impedir outras pessoas de acessá-lo ou usá-lo.
+- Não remova avisos de licença e autoria preservados no projeto.
 
-Esta licença garante que todos tenham acesso ao código-fonte e podem colaborar livremente, promovendo o compartilhamento e o aprimoramento do projeto.
+A licença ISC é permissiva, mas os avisos de copyright e licença devem acompanhar as cópias do projeto.
 
 ## ⚠ Disclaimer
 
