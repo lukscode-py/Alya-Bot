@@ -1,5 +1,4 @@
-import path from "node:path";
-import { ASSETS_DIR, PREFIX } from "../../config.js";
+import { BOT_BANNER_PATH, PREFIX } from "../../config.js";
 import { menuMessage } from "../../menu.js";
 
 export default {
@@ -14,7 +13,7 @@ export default {
     await sendSuccessReact();
 
     await sendImageFromFile(
-      path.join(ASSETS_DIR, "images", "takeshi-bot.png"),
+      BOT_BANNER_PATH,
       `\n\n${menuMessage(remoteJid)}`
     );
   },

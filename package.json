@@ -1,7 +1,7 @@
 {
-  "name": "takeshi-bot",
+  "name": "alya-bot",
   "version": "8.7.0",
-  "description": "Um bot de WhatsApp multifunções.",
+  "description": "Alya Bot, bot de WhatsApp multifunções otimizado para uso local.",
   "main": "index.js",
   "type": "module",
   "scripts": {

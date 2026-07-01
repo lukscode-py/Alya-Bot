@@ -7,11 +7,15 @@ const __dirname = path.dirname(__filename);
 // Prefixo padrão dos comandos.
 export const PREFIX = "/";
 
-// Emoji do bot (mude se preferir).
-export const BOT_EMOJI = "🤖";
+// Emoji padrão usado nas respostas do bot.
+export const BOT_EMOJI = "🤍";
 
 // Nome do bot (mude se preferir).
-export const BOT_NAME = "Takeshi Bot";
+export const BOT_NAME = "Alya Bot";
+
+// Decoração padrão usada em linhas do menu.
+export const BorderMenu = "┊";
+export const IconMenu = "⟡̇🤍֗ꕀ⭟ ";
 
 // LID do bot.
 // Para obter o LID do bot, use o comando <prefixo>lid respondendo em cima de uma mensagem do número do bot
@@ -23,17 +27,23 @@ export const BOT_LID = "12345678901234567890@lid";
 // Troque o <prefixo> pelo prefixo do bot (ex: /meu-lid).
 export const OWNER_LID = "12345678901234567890@lid";
 
+// Diretório raiz do projeto.
+export const ROOT_DIR = path.resolve(__dirname, "..");
+
+// Banner padrão do bot.
+export const BOT_BANNER_PATH = path.join(ROOT_DIR, "banner.png");
+
 // Diretório dos comandos
 export const COMMANDS_DIR = path.join(__dirname, "commands");
 
 // Diretório de arquivos de mídia.
-export const DATABASE_DIR = path.resolve(__dirname, "..", "database");
+export const DATABASE_DIR = path.join(ROOT_DIR, "database");
 
 // Diretório de arquivos de mídia.
-export const ASSETS_DIR = path.resolve(__dirname, "..", "assets");
+export const ASSETS_DIR = path.join(ROOT_DIR, "assets");
 
 // Diretório de arquivos temporários.
-export const TEMP_DIR = path.resolve(__dirname, "..", "assets", "temp");
+export const TEMP_DIR = path.join(ASSETS_DIR, "temp");
 
 // Timeout em milissegundos por evento (evita banimento).
 export const TIMEOUT_IN_MILLISECONDS_BY_EVENT = 500;
