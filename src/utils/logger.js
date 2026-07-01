@@ -1,11 +1,24 @@
-/**
- * Logs
- *
- * @author Dev Gui
- */
 import pkg from "../../package.json" with { type: "json" };
 
+const RESET = "\x1b[0m";
+const COLORS = {
+  talk: "\x1b[36m",
+  input: "\x1b[30m",
+  info: "\x1b[34m",
+  success: "\x1b[32m",
+  error: "\x1b[31m",
+  warning: "\x1b[33m",
+};
+
 let consoleNoiseFilterInstalled = false;
+
+function buildPrefix(type, color) {
+  return `${color}[ALYA BOT | ${type}]${RESET}`;
+}
+
+function writeLog(type, color, message, ...extra) {
+  console.log(buildPrefix(type, color), message, ...extra);
+}
 
 export function installConsoleNoiseFilter() {
   if (consoleNoiseFilterInstalled) {
@@ -28,33 +41,33 @@ export function installConsoleNoiseFilter() {
   consoleNoiseFilterInstalled = true;
 }
 
-export function sayLog(message) {
-  console.log("\x1b[36m[ALYA BOT | TALK]\x1b[0m", message);
+export function sayLog(message, ...extra) {
+  writeLog("TALK", COLORS.talk, message, ...extra);
 }
 
-export function inputLog(message) {
-  console.log("\x1b[30m[ALYA BOT | INPUT]\x1b[0m", message);
+export function inputLog(message, ...extra) {
+  writeLog("INPUT", COLORS.input, message, ...extra);
 }
 
-export function infoLog(message) {
-  console.log("\x1b[34m[ALYA BOT | INFO]\x1b[0m", message);
+export function infoLog(message, ...extra) {
+  writeLog("INFO", COLORS.info, message, ...extra);
 }
 
-export function successLog(message) {
-  console.log("\x1b[32m[ALYA BOT | SUCCESS]\x1b[0m", message);
+export function successLog(message, ...extra) {
+  writeLog("SUCCESS", COLORS.success, message, ...extra);
 }
 
-export function errorLog(message) {
-  console.log("\x1b[31m[ALYA BOT | ERROR]\x1b[0m", message);
+export function errorLog(message, ...extra) {
+  writeLog("ERROR", COLORS.error, message, ...extra);
 }
 
-export function warningLog(message) {
-  console.log("\x1b[33m[ALYA BOT | WARNING]\x1b[0m", message);
+export function warningLog(message, ...extra) {
+  writeLog("WARNING", COLORS.warning, message, ...extra);
 }
 
 export function bannerLog() {
-  console.log(`\x1b[36m░█▀█░█░░░█░█░█▀█░░█▀▄░█▀█░▀█▀\x1b[0m`);
-  console.log(`░█▀█░█░░░░█░░█▀█░░█▀▄░█░█░░█░`);
-  console.log(`\x1b[36m░▀░▀░▀▀▀░░▀░░▀░▀░░▀▀░░▀▀▀░░▀░\x1b[0m`);
-  console.log(`\x1b[36m🤍 Versão: \x1b[0m${pkg.version}\n`);
+  console.log(`${COLORS.talk}░█▀█░█░░░█░█░█▀█░░█▀▄░█▀█░▀█▀${RESET}`);
+  console.log("░█▀█░█░░░░█░░█▀█░░█▀▄░█░█░░█░");
+  console.log(`${COLORS.talk}░▀░▀░▀▀▀░░▀░░▀░▀░░▀▀░░▀▀▀░░▀░${RESET}`);
+  console.log(`${COLORS.talk}🤍 Versão: ${RESET}${pkg.version}\n`);
 }

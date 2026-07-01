@@ -1,51 +1,70 @@
-/**
- * Utilitário para lidar com erros "Bad MAC"
- * que são comuns em bots WhatsApp usando Baileys.
- *
- * Este módulo fornece funções para detectar, contar
- * e lidar graciosamente com esses erros.
- *
- * @author Dev Gui
- */
 import fs from "node:fs";
 import path from "node:path";
 import { errorLog, warningLog } from "./logger.js";
 
+const DEFAULT_MAX_RETRIES = 5;
+const DEFAULT_RESET_INTERVAL_MS = 5 * 60 * 1000;
+
+const BAD_MAC_SIGNATURES = [
+  "Bad MAC",
+  "MAC verification failed",
+  "decryption failed",
+];
+
+const SESSION_ERROR_SIGNATURES = ["Session", "signal protocol", "decrypt"];
+
+const PRESERVED_SESSION_FILE_PATTERNS = [
+  "app-state-sync-key",
+  "app-state-sync-version",
+];
+
+function stringifyError(error) {
+  return error?.message || error?.toString() || "";
+}
+
+function getBaileysAuthFolder() {
+  return path.resolve(process.cwd(), "assets", "auth", "baileys");
+}
+
+function shouldPreserveSessionFile(file) {
+  return (
+    file === "creds.json" ||
+    PRESERVED_SESSION_FILE_PATTERNS.some((pattern) => file.includes(pattern))
+  );
+}
+
 class BadMacHandler {
-  constructor() {
+  constructor({
+    maxRetries = DEFAULT_MAX_RETRIES,
+    resetInterval = DEFAULT_RESET_INTERVAL_MS,
+  } = {}) {
     this.errorCount = 0;
-    this.maxRetries = 5;
-    this.resetInterval = 300000;
+    this.maxRetries = maxRetries;
+    this.resetInterval = resetInterval;
     this.lastReset = Date.now();
   }
 
   isBadMacError(error) {
-    const errorMessage = error?.message || error?.toString() || "";
-    return (
-      errorMessage.includes("Bad MAC") ||
-      errorMessage.includes("MAC verification failed") ||
-      errorMessage.includes("decryption failed")
+    const errorMessage = stringifyError(error);
+
+    return BAD_MAC_SIGNATURES.some((signature) =>
+      errorMessage.includes(signature),
     );
   }
 
   isSessionError(error) {
-    const errorMessage = error?.message || error?.toString() || "";
+    const errorMessage = stringifyError(error);
+
     return (
-      errorMessage.includes("Session") ||
-      errorMessage.includes("signal protocol") ||
-      errorMessage.includes("decrypt") ||
-      this.isBadMacError(error)
+      SESSION_ERROR_SIGNATURES.some((signature) =>
+        errorMessage.includes(signature),
+      ) || this.isBadMacError(error)
     );
   }
 
   clearProblematicSessionFiles() {
     try {
-      const baileysFolder = path.resolve(
-        process.cwd(),
-        "assets",
-        "auth",
-        "baileys"
-      );
+      const baileysFolder = getBaileysAuthFolder();
 
       if (!fs.existsSync(baileysFolder)) {
         return false;
@@ -56,20 +75,26 @@ class BadMacHandler {
 
       for (const file of files) {
         const filePath = path.join(baileysFolder, file);
-        if (fs.statSync(filePath).isFile()) {
-          if (
-            file.includes("app-state-sync-key") ||
-            file === "creds.json" ||
-            file.includes("app-state-sync-version")
-          ) {
-            continue;
-          }
+
+        if (!fs.statSync(filePath).isFile()) {
+          continue;
         }
+
+        if (shouldPreserveSessionFile(file)) {
+          continue;
+        }
+
+        if (!file.includes("session")) {
+          continue;
+        }
+
+        fs.unlinkSync(filePath);
+        removedCount++;
       }
 
       if (removedCount > 0) {
         warningLog(
-          `${removedCount} arquivos de sessão problemáticos removidos. Credenciais principais preservadas.`
+          `${removedCount} arquivos de sessão problemáticos removidos. Credenciais principais preservadas.`,
         );
         return true;
       }
@@ -85,8 +110,7 @@ class BadMacHandler {
     this.errorCount++;
     errorLog(`Bad MAC error count: ${this.errorCount}/${this.maxRetries}`);
 
-    const now = Date.now();
-    if (now - this.lastReset > this.resetInterval) {
+    if (Date.now() - this.lastReset > this.resetInterval) {
       this.resetErrorCount();
     }
   }
@@ -98,7 +122,7 @@ class BadMacHandler {
 
     if (previousCount > 0) {
       warningLog(
-        `Reset do contador de Bad MAC errors. Contador anterior: ${previousCount}`
+        `Reset do contador de Bad MAC errors. Contador anterior: ${previousCount}`,
       );
     }
   }
@@ -117,13 +141,13 @@ class BadMacHandler {
 
     if (this.hasReachedLimit()) {
       warningLog(
-        `Limite de Bad MAC errors atingido (${this.maxRetries}). Considere reiniciar o bot.`
+        `Limite de Bad MAC errors atingido (${this.maxRetries}). Considere reiniciar o bot.`,
       );
       return true;
     }
 
     warningLog(
-      `Ignorando Bad MAC error e continuando operação... (${this.errorCount}/${this.maxRetries})`
+      `Ignorando Bad MAC error e continuando operação... (${this.errorCount}/${this.maxRetries})`,
     );
     return true;
   }
@@ -136,6 +160,7 @@ class BadMacHandler {
         if (this.handleError(error, context)) {
           return null;
         }
+
         throw error;
       }
     };
@@ -148,7 +173,7 @@ class BadMacHandler {
       lastReset: new Date(this.lastReset).toISOString(),
       timeUntilReset: Math.max(
         0,
-        this.resetInterval - (Date.now() - this.lastReset)
+        this.resetInterval - (Date.now() - this.lastReset),
       ),
     };
   }

@@ -1,23 +1,3 @@
-/**
- * Estado em memória da defesa anti-payment: deduplicação por autor e
- * "incidente" de grupo coalescido.
- *
- * O handler antigo fechava e reabria o grupo uma vez POR mensagem. Sob rajada
- * (vários pagamentos quase simultâneos, às vezes do mesmo autor) isso fazia o
- * grupo piscar, repetia a limpeza e às vezes reabria o grupo antes de todos
- * serem removidos. Aqui:
- *
- * - cada autor distinto é removido UMA vez (TTL curto evita reprocessar o mesmo);
- * - remoção e revogação da mensagem rodam em PARALELO;
- * - o grupo fecha e é limpo UMA vez por incidente (compartilhado entre autores);
- * - a reabertura é "debounced": acontece uma vez, GROUP_INCIDENT_TTL_MS após a
- *   última ameaça, em vez de uma reabertura por mensagem.
- *
- * Tudo é volátil de propósito, como o messageEnvelopeRegistry: o modo de falha
- * ao reiniciar é ficar mais conservador, nunca menos seguro.
- *
- * @author Dev Gui
- */
 import { sendCleanChat } from "./cleanChat.js";
 import { errorLog } from "./logger.js";
 
@@ -26,12 +6,11 @@ const RECENT_PRUNE_INTERVAL_MS = 30 * 1000;
 const DEFAULT_GROUP_INCIDENT_TTL_MS = 8 * 1000;
 
 let groupIncidentTtlMs = DEFAULT_GROUP_INCIDENT_TTL_MS;
-
-const recentlyHandled = new Map(); // `${remoteJid}:${userLid}` -> expiresAt
-const inFlight = new Map(); // `${remoteJid}:${userLid}` -> Promise<boolean>
-const groupIncidents = new Map(); // remoteJid -> { closePromise, groupClosed, reopenTimer }
-
 let lastPruneAt = 0;
+
+const recentlyHandled = new Map();
+const inFlight = new Map();
+const groupIncidents = new Map();
 
 function participantKey(remoteJid, userLid) {
   return `${remoteJid}:${userLid}`;
@@ -61,17 +40,19 @@ function pruneRecentlyHandled() {
   }
 }
 
-/**
- * Garante UM incidente por grupo: fecha o grupo e limpa o chat uma única vez,
- * compartilhando a mesma promessa entre todos os autores da mesma rajada.
- */
-function ensureGroupIncident(socket, remoteJid) {
-  const existing = groupIncidents.get(remoteJid);
+function rememberHandledParticipant(remoteJid, userLid) {
+  recentlyHandled.set(
+    participantKey(remoteJid, userLid),
+    Date.now() + RECENT_PARTICIPANT_TTL_MS,
+  );
+}
 
-  if (existing) {
-    return existing;
-  }
+function wasRecentlyHandled(remoteJid, userLid) {
+  const expiresAt = recentlyHandled.get(participantKey(remoteJid, userLid));
+  return Boolean(expiresAt && expiresAt > Date.now());
+}
 
+function createGroupIncident(socket, remoteJid) {
   const incident = { groupClosed: false, reopenTimer: undefined };
 
   incident.closePromise = (async () => {
@@ -85,15 +66,28 @@ function ensureGroupIncident(socket, remoteJid) {
     await sendCleanChat({ socket, remoteJid });
   })();
 
+  return incident;
+}
+
+function ensureGroupIncident(socket, remoteJid) {
+  const existing = groupIncidents.get(remoteJid);
+
+  if (existing) {
+    return existing;
+  }
+
+  const incident = createGroupIncident(socket, remoteJid);
   groupIncidents.set(remoteJid, incident);
 
   return incident;
 }
 
-/**
- * Reabre o grupo de forma debounced: cada nova ameaça reposiciona o timer, então
- * o grupo só reabre GROUP_INCIDENT_TTL_MS após a ÚLTIMA mensagem da rajada.
- */
+function clearGroupIncident(remoteJid, incident) {
+  if (groupIncidents.get(remoteJid) === incident) {
+    groupIncidents.delete(remoteJid);
+  }
+}
+
 function scheduleGroupReopen(socket, remoteJid) {
   const incident = groupIncidents.get(remoteJid);
 
@@ -102,7 +96,6 @@ function scheduleGroupReopen(socket, remoteJid) {
   }
 
   if (!incident.groupClosed) {
-    // O fechamento falhou: nada a reabrir. Libera o incidente para nova tentativa.
     groupIncidents.delete(remoteJid);
     return;
   }
@@ -115,61 +108,58 @@ function scheduleGroupReopen(socket, remoteJid) {
     runStep(
       () => socket.groupSettingUpdate(remoteJid, "not_announcement"),
       "Erro ao abrir o grupo pelo anti-payment.",
-    ).finally(() => {
-      if (groupIncidents.get(remoteJid) === incident) {
-        groupIncidents.delete(remoteJid);
-      }
-    });
+    ).finally(() => clearGroupIncident(remoteJid, incident));
   }, groupIncidentTtlMs);
 
   incident.reopenTimer.unref?.();
 }
 
+async function removePaymentAuthor({ socket, remoteJid, userLid }) {
+  let removed = false;
+
+  await socket
+    .groupParticipantsUpdate(remoteJid, [userLid], "remove")
+    .then(() => {
+      removed = true;
+    })
+    .catch((error) => {
+      errorLog(
+        `Erro ao banir membro pelo anti-payment. Detalhes: ${error.message}`,
+      );
+    });
+
+  return removed;
+}
+
+function deletePaymentMessage({ socket, remoteJid, messageKey }) {
+  if (!messageKey) {
+    return Promise.resolve();
+  }
+
+  return runStep(
+    () => socket.sendMessage(remoteJid, { delete: messageKey }),
+    "Erro ao apagar a mensagem de pagamento.",
+  );
+}
+
 async function runDefense({ socket, remoteJid, userLid, messageKey }) {
   const incident = ensureGroupIncident(socket, remoteJid);
 
-  let removed = false;
-
-  await Promise.all([
+  const [, removed] = await Promise.all([
     incident.closePromise,
-    socket
-      .groupParticipantsUpdate(remoteJid, [userLid], "remove")
-      .then(() => {
-        removed = true;
-      })
-      .catch((error) => {
-        errorLog(
-          `Erro ao banir membro pelo anti-payment. Detalhes: ${error.message}`,
-        );
-      }),
-    messageKey
-      ? runStep(
-          () => socket.sendMessage(remoteJid, { delete: messageKey }),
-          "Erro ao apagar a mensagem de pagamento.",
-        )
-      : Promise.resolve(),
+    removePaymentAuthor({ socket, remoteJid, userLid }),
+    deletePaymentMessage({ socket, remoteJid, messageKey }),
   ]);
 
   scheduleGroupReopen(socket, remoteJid);
 
   if (removed) {
-    recentlyHandled.set(
-      participantKey(remoteJid, userLid),
-      Date.now() + RECENT_PARTICIPANT_TTL_MS,
-    );
+    rememberHandledParticipant(remoteJid, userLid);
   }
 
   return removed;
 }
 
-/**
- * Defende o grupo de uma mensagem de pagamento, deduplicando por autor e
- * coalescendo o fechamento/limpeza/reabertura. A remoção só é marcada como
- * "recente" quando de fato funciona, então uma remoção que falhou NÃO suprime as
- * próximas mensagens do mesmo autor.
- *
- * @returns {Promise<boolean>} true se o autor foi (ou já estava sendo) removido.
- */
 export function defendAgainstPayment({ socket, remoteJid, userLid, messageKey }) {
   if (!remoteJid || !userLid) {
     return Promise.resolve(false);
@@ -177,13 +167,11 @@ export function defendAgainstPayment({ socket, remoteJid, userLid, messageKey })
 
   pruneRecentlyHandled();
 
-  const key = participantKey(remoteJid, userLid);
-  const expiresAt = recentlyHandled.get(key);
-
-  if (expiresAt && expiresAt > Date.now()) {
+  if (wasRecentlyHandled(remoteJid, userLid)) {
     return Promise.resolve(true);
   }
 
+  const key = participantKey(remoteJid, userLid);
   const existing = inFlight.get(key);
 
   if (existing) {
@@ -203,9 +191,6 @@ export function defendAgainstPayment({ socket, remoteJid, userLid, messageKey })
   });
 }
 
-/**
- * Apenas para testes: zera o estado e restaura o TTL padrão.
- */
 export function __clearPaymentDefenseState() {
   for (const incident of groupIncidents.values()) {
     if (incident.reopenTimer) {
@@ -220,9 +205,6 @@ export function __clearPaymentDefenseState() {
   groupIncidentTtlMs = DEFAULT_GROUP_INCIDENT_TTL_MS;
 }
 
-/**
- * Apenas para testes: encurta a janela de reabertura debounced.
- */
 export function __setGroupIncidentTtlForTests(ms) {
   groupIncidentTtlMs = ms;
 }
