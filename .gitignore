@@ -22,3 +22,6 @@ downloads/
 *.log
 
 .DS_Store
+
+# Local AI/aicmd development guide
+AGENTS_DEV.md
