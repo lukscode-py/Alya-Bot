@@ -1,9 +1,3 @@
-/**
- * Evento chamado quando um usuário
- * entra ou sai de um grupo de WhatsApp.
- *
- * @author Dev Gui
- */
 import fs from "node:fs";
 import { exitMessage, welcomeMessage } from "../messages.js";
 import { getProfileImageData } from "../services/baileys.js";
@@ -15,6 +9,68 @@ import {
 import { extractUserLid, onlyNumbers } from "../utils/index.js";
 import { errorLog } from "../utils/logger.js";
 
+function isGroupJid(remoteJid) {
+  return remoteJid?.endsWith("@g.us");
+}
+
+function buildMemberMessage(template, userLid) {
+  const mentions = [];
+  let text = template;
+
+  if (template.includes("@member")) {
+    text = template.replace("@member", `@${onlyNumbers(userLid)}`);
+    mentions.push(userLid);
+  }
+
+  return { text, mentions };
+}
+
+function removeProfileImageIfTemporary(profileImage) {
+  if (!profileImage || profileImage.includes("default-user")) {
+    return;
+  }
+
+  if (fs.existsSync(profileImage)) {
+    fs.unlinkSync(profileImage);
+  }
+}
+
+async function sendMemberEventMessage({ socket, remoteJid, userLid, template }) {
+  const { text, mentions } = buildMemberMessage(template, userLid);
+  const { buffer, profileImage } = await getProfileImageData(socket, userLid);
+
+  try {
+    if (!buffer) {
+      await socket.sendMessage(remoteJid, { text, mentions });
+      return;
+    }
+
+    try {
+      await socket.sendMessage(remoteJid, {
+        image: buffer,
+        caption: text,
+        mentions,
+      });
+    } catch {
+      await socket.sendMessage(remoteJid, { text, mentions });
+    }
+  } finally {
+    removeProfileImageIfTemporary(profileImage);
+  }
+}
+
+function resolveParticipantTemplate({ remoteJid, action }) {
+  if (action === "add" && isActiveWelcomeGroup(remoteJid)) {
+    return welcomeMessage;
+  }
+
+  if (action === "remove" && isActiveExitGroup(remoteJid)) {
+    return exitMessage;
+  }
+
+  return null;
+}
+
 export async function onGroupParticipantsUpdate({
   data,
   remoteJid,
@@ -22,100 +78,22 @@ export async function onGroupParticipantsUpdate({
   action,
 }) {
   try {
-    if (!remoteJid.endsWith("@g.us")) {
+    if (!isGroupJid(remoteJid) || !isActiveGroup(remoteJid)) {
       return;
     }
 
-    if (!isActiveGroup(remoteJid)) {
+    const template = resolveParticipantTemplate({ remoteJid, action });
+
+    if (!template) {
       return;
     }
 
-    const userLid = extractUserLid(data);
-
-    if (isActiveWelcomeGroup(remoteJid) && action === "add") {
-      const { buffer, profileImage } = await getProfileImageData(
-        socket,
-        userLid
-      );
-
-      const hasMemberMention = welcomeMessage.includes("@member");
-
-      const mentions = [];
-      let finalWelcomeMessage = welcomeMessage;
-
-      if (hasMemberMention) {
-        const userNumber = onlyNumbers(userLid);
-        finalWelcomeMessage = welcomeMessage.replace(
-          "@member",
-          `@${userNumber}`
-        );
-        mentions.push(userLid);
-      }
-
-      if (buffer) {
-        try {
-          await socket.sendMessage(remoteJid, {
-            image: buffer,
-            caption: finalWelcomeMessage,
-            mentions,
-          });
-        } catch (error) {
-          await socket.sendMessage(remoteJid, {
-            text: finalWelcomeMessage,
-            mentions,
-          });
-        }
-      } else {
-        await socket.sendMessage(remoteJid, {
-          text: finalWelcomeMessage,
-          mentions,
-        });
-      }
-
-      if (!profileImage.includes("default-user")) {
-        fs.unlinkSync(profileImage);
-      }
-    } else if (isActiveExitGroup(remoteJid) && action === "remove") {
-      const { buffer, profileImage } = await getProfileImageData(
-        socket,
-        userLid
-      );
-
-      const hasMemberMention = exitMessage.includes("@member");
-
-      const mentions = [];
-      let finalExitMessage = exitMessage;
-
-      if (hasMemberMention) {
-        const userNumber = onlyNumbers(userLid);
-        finalExitMessage = exitMessage.replace("@member", `@${userNumber}`);
-        mentions.push(userLid);
-      }
-
-      if (buffer) {
-        try {
-          await socket.sendMessage(remoteJid, {
-            image: buffer,
-            caption: finalExitMessage,
-            mentions,
-          });
-        } catch (error) {
-          await socket.sendMessage(remoteJid, {
-            text: finalExitMessage,
-            mentions,
-          });
-        }
-      } else {
-        await socket.sendMessage(remoteJid, {
-          text: finalExitMessage,
-          mentions,
-        });
-      }
-
-      if (!profileImage.includes("default-user")) {
-        fs.unlinkSync(profileImage);
-      }
-    }
+    await sendMemberEventMessage({
+      socket,
+      remoteJid,
+      userLid: extractUserLid(data),
+      template,
+    });
   } catch (error) {
     errorLog(`Erro em onGroupParticipantsUpdate: ${error.message}`);
     errorLog(JSON.stringify(error, null, 2));

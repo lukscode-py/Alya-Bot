@@ -1,8 +1,3 @@
-/**
- * Validador de mensagens
- *
- * @author Dev Gui
- */
 import { BOT_LID, OWNER_LID } from "../config.js";
 import {
   applyAntiPaymentRestriction,
@@ -18,105 +13,166 @@ import { errorLog } from "../utils/logger.js";
 import { hasPaymentMessage } from "../utils/paymentMessage.js";
 import { isAdmin } from "./index.js";
 
+function getGroupMessageContext(webMessage) {
+  if (!webMessage?.key) {
+    return null;
+  }
+
+  const { remoteJid, fromMe, id: messageId } = webMessage.key;
+
+  if (!remoteJid?.endsWith("@g.us") || fromMe) {
+    return null;
+  }
+
+  const userLid = webMessage.key.participant || webMessage.key.participantAlt;
+
+  if (!userLid) {
+    return null;
+  }
+
+  return { remoteJid, fromMe, messageId, userLid };
+}
+
+async function shouldIgnorePrivilegedSender({ socket, remoteJid, userLid }) {
+  if (userLid === OWNER_LID || userLid === BOT_LID) {
+    return true;
+  }
+
+  return isAdmin({ remoteJid, userLid, socket });
+}
+
+function buildDeleteKey({ remoteJid, fromMe = false, messageId, userLid }) {
+  return {
+    remoteJid,
+    fromMe,
+    id: messageId,
+    participant: userLid,
+  };
+}
+
+async function applyAntiPaymentIfNeeded({
+  socket,
+  remoteJid,
+  userLid,
+  messageId,
+  webMessage,
+  isActive,
+}) {
+  if (!isActive) {
+    return false;
+  }
+
+  if (hasPaymentMessage(webMessage)) {
+    await applyAntiPaymentRestriction({
+      socket,
+      remoteJid,
+      userLid,
+      messageKey: buildDeleteKey({ remoteJid, messageId, userLid }),
+    });
+
+    return true;
+  }
+
+  return handleQuotedPaymentRestriction({ socket, remoteJid, webMessage });
+}
+
+async function applyAntiStatusGroupIfNeeded({
+  socket,
+  remoteJid,
+  userLid,
+  webMessage,
+  isActive,
+}) {
+  if (!isActive || !hasGroupStatusMessage(webMessage)) {
+    return false;
+  }
+
+  try {
+    await socket.groupParticipantsUpdate(remoteJid, [userLid], "remove");
+    await socket.sendMessage(remoteJid, { delete: webMessage.key });
+  } catch (error) {
+    errorLog(
+      `Erro ao aplicar anti-status-grupo. Verifique se eu estou como admin do grupo! Detalhes: ${error.message}`,
+    );
+  }
+
+  return true;
+}
+
+async function deleteRestrictedMediaIfNeeded({
+  socket,
+  remoteJid,
+  fromMe,
+  userLid,
+  messageId,
+  webMessage,
+  restrictions,
+}) {
+  const messageType = Object.keys(readRestrictedMessageTypes()).find((type) =>
+    hasDirectMedia(webMessage, type),
+  );
+
+  if (!messageType || !restrictions[`anti-${messageType}`]) {
+    return false;
+  }
+
+  await socket.sendMessage(remoteJid, {
+    delete: buildDeleteKey({ remoteJid, fromMe, messageId, userLid }),
+  });
+
+  return true;
+}
+
 export async function messageHandler(socket, webMessage) {
   try {
-    if (!webMessage?.key) {
+    const context = getGroupMessageContext(webMessage);
+
+    if (!context) {
       return;
     }
 
-    const { remoteJid, fromMe, id: messageId } = webMessage.key;
+    const { remoteJid, fromMe, messageId, userLid } = context;
 
-    if (!remoteJid?.endsWith("@g.us")) {
-      return;
-    }
-
-    if (fromMe) {
-      return;
-    }
-
-    const userLid = webMessage.key?.participant || webMessage.key?.participantAlt;
-
-    if (!userLid) {
-      return;
-    }
-
-    const isBotOrOwner = userLid === OWNER_LID || userLid === BOT_LID;
-
-    if (isBotOrOwner) {
-      return;
-    }
-
-    const userIsAdmin = await isAdmin({ remoteJid, userLid, socket });
-
-    if (userIsAdmin) {
+    if (await shouldIgnorePrivilegedSender({ socket, remoteJid, userLid })) {
       return;
     }
 
     const antiGroups = readGroupRestrictions();
-    const isAntiPaymentActive = !!antiGroups[remoteJid]?.["anti-payment"];
+    const restrictions = antiGroups[remoteJid] || {};
 
-    if (isAntiPaymentActive && hasPaymentMessage(webMessage)) {
-      await applyAntiPaymentRestriction({
+    if (
+      await applyAntiPaymentIfNeeded({
         socket,
         remoteJid,
         userLid,
-        messageKey: {
-          remoteJid,
-          fromMe: false,
-          id: messageId,
-          participant: userLid,
-        },
-      });
-
-      return;
-    }
-
-    if (
-      isAntiPaymentActive &&
-      (await handleQuotedPaymentRestriction({ socket, remoteJid, webMessage }))
+        messageId,
+        webMessage,
+        isActive: !!restrictions["anti-payment"],
+      })
     ) {
       return;
     }
 
     if (
-      antiGroups[remoteJid]?.["anti-status-grupo"] &&
-      hasGroupStatusMessage(webMessage)
-    ) {
-      try {
-        await socket.groupParticipantsUpdate(remoteJid, [userLid], "remove");
-
-        await socket.sendMessage(remoteJid, {
-          delete: webMessage.key,
-        });
-      } catch (error) {
-        errorLog(
-          `Erro ao aplicar anti-status-grupo. Verifique se eu estou como admin do grupo! Detalhes: ${error.message}`,
-        );
-      }
-      return;
-    }
-
-    const messageType = Object.keys(readRestrictedMessageTypes()).find((type) =>
-      hasDirectMedia(webMessage, type),
-    );
-
-    if (!messageType) {
-      return;
-    }
-
-    const isAntiActive = !!antiGroups[remoteJid]?.[`anti-${messageType}`];
-
-    if (!isAntiActive) {
-      return;
-    }
-
-    await socket.sendMessage(remoteJid, {
-      delete: {
+      await applyAntiStatusGroupIfNeeded({
+        socket,
         remoteJid,
-        fromMe,
-        id: messageId,
-        participant: userLid,
-      },
+        userLid,
+        webMessage,
+        isActive: !!restrictions["anti-status-grupo"],
+      })
+    ) {
+      return;
+    }
+
+    await deleteRestrictedMediaIfNeeded({
+      socket,
+      remoteJid,
+      fromMe,
+      userLid,
+      messageId,
+      webMessage,
+      restrictions,
     });
   } catch (error) {
     errorLog(

@@ -1,17 +1,11 @@
 /**
- * Middleware customizado para adicionar lógica personalizada
- * sem modificar os arquivos principais do bot.
+ * Ponto de extensão local da Alya.
  *
- * Este middleware é chamado em dois momentos:
- * 1. Antes de processar qualquer mensagem (type: "message")
- * 2. Antes de processar eventos de participantes add/remove (type: "participant")
+ * É chamado antes do processamento comum de mensagens e antes dos eventos de
+ * entrada/saída de participantes. Use este arquivo para personalizações do
+ * projeto sem alterar o fluxo principal do bot.
  *
- * @param {CustomMiddlewareProps} params - Parâmetros do middleware
- *
- * Para exemplos de uso, consulte:
- * - README.md (seção "Custom Middleware")
- *
- * @author Dev Gui
+ * @param {CustomMiddlewareProps} params
  */
 export async function customMiddleware({
   socket,
@@ -21,6 +15,12 @@ export async function customMiddleware({
   action,
   data,
 }) {
-  // Adicione sua lógica customizada aqui
-  // Este arquivo é SEU - modifique à vontade!
+  void socket;
+  void webMessage;
+  void type;
+  void commonFunctions;
+  void action;
+  void data;
+
+  // Adicione personalizações locais aqui.
 }

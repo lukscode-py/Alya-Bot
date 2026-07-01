@@ -1,12 +1,7 @@
-/**
- * Classe de erro customizada para
- * avisos.
- *
- * @author Dev Gui
- */
-export default class WarningError extends Error {
+import AppError from "./AppError.js";
+
+export default class WarningError extends AppError {
   constructor(message) {
-    super(message);
-    this.name = "WarningError";
+    super(message, "WarningError");
   }
 }

@@ -1,12 +1,7 @@
-/**
- * Classe de erro customizada para
- * erros críticos.
- *
- * @author Dev Gui
- */
-export default class DangerError extends Error {
+import AppError from "./AppError.js";
+
+export default class DangerError extends AppError {
   constructor(message) {
-    super(message);
-    this.name = "DangerError";
+    super(message, "DangerError");
   }
 }

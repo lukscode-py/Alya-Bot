@@ -1,12 +1,7 @@
-/**
- * Classe de erro customizada para
- * parâmetros inválidos.
- *
- * @author Dev Gui
- */
-export default class InvalidParameterError extends Error {
+import AppError from "./AppError.js";
+
+export default class InvalidParameterError extends AppError {
   constructor(message) {
-    super(message);
-    this.name = "InvalidParameterError";
+    super(message, "InvalidParameterError");
   }
 }
