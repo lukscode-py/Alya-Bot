@@ -1,45 +1,9 @@
-/**
- * Desenvolvido por: MRX
- * Refatorado por: Dev Gui
- *
- * @author Dev Gui
- */
-import { PREFIX } from "../../../config.js";
-import { InvalidParameterError } from "../../../errors/index.js";
-import { Ffmpeg } from "../../../services/ffmpeg.js";
+import { createFfmpegImageCommand } from "../../../utils/canvas-command-utils.js";
 
-export default {
+export default createFfmpegImageCommand({
   name: "espelhar",
-  description: "Inverto a posição da imagem que você enviar",
+  description: "Espelha a imagem enviada.",
   commands: ["espelhar", "muda-direcao", "mudar-direcao", "mirror"],
-  usage: `${PREFIX}espelhar (marque a imagem) ou ${PREFIX}espelhar (responda a imagem)`,
-  handle: async ({
-    isImage,
-    downloadImage,
-    sendSuccessReact,
-    sendWaitReact,
-    sendImageFromFile,
-    webMessage,
-  }) => {
-    if (!isImage) {
-      throw new InvalidParameterError(
-        "Você precisa marcar uma imagem ou responder a uma imagem"
-      );
-    }
-
-    await sendWaitReact();
-    const filePath = await downloadImage(webMessage);
-    const ffmpeg = new Ffmpeg();
-
-    try {
-      const outputPath = await ffmpeg.mirrorImage(filePath);
-      await sendSuccessReact();
-      await sendImageFromFile(outputPath);
-    } catch (error) {
-      console.error(error);
-      throw new Error("Erro ao aplicar efeito de espelhamento");
-    } finally {
-      await ffmpeg.cleanup(filePath);
-    }
-  },
-};
+  effectMethod: "mirrorImage",
+  effectErrorMessage: "Erro ao aplicar efeito de espelhamento",
+});

@@ -1,51 +1,9 @@
-/**
- * Desenvolvido por: MRX
- * Refatorado por: Dev Gui
- *
- * @author Dev Gui
- */
-import { PREFIX } from "../../../config.js";
-import { InvalidParameterError } from "../../../errors/index.js";
-import { Ffmpeg } from "../../../services/ffmpeg.js";
+import { createFfmpegImageCommand } from "../../../utils/canvas-command-utils.js";
 
-export default {
+export default createFfmpegImageCommand({
   name: "contraste",
-  description:
-    "Gero uma montagem que ajusta o contraste da imagem que você enviar",
+  description: "Ajusta o contraste da imagem enviada.",
   commands: ["contraste", "contrast", "melhora", "melhorar", "hd", "to-hd"],
-  usage: `${PREFIX}contraste (marque a imagem) ou ${PREFIX}contraste (responda a imagem)`,
-  /**
-   * @param {CommandHandleProps} props
-   */
-  handle: async ({
-    isImage,
-    downloadImage,
-    sendSuccessReact,
-    sendWaitReact,
-    sendImageFromFile,
-    webMessage,
-  }) => {
-    if (!isImage) {
-      throw new InvalidParameterError(
-        "Você precisa marcar uma imagem ou responder a uma imagem"
-      );
-    }
-
-    await sendWaitReact();
-
-    const filePath = await downloadImage(webMessage);
-
-    const ffmpeg = new Ffmpeg();
-
-    try {
-      const outputPath = await ffmpeg.adjustContrast(filePath);
-      await sendSuccessReact();
-      await sendImageFromFile(outputPath);
-    } catch (error) {
-      console.error(error);
-      throw new Error("Erro ao aplicar efeito de contraste");
-    } finally {
-      await ffmpeg.cleanup(filePath);
-    }
-  },
-};
+  effectMethod: "adjustContrast",
+  effectErrorMessage: "Erro ao aplicar efeito de contraste",
+});
