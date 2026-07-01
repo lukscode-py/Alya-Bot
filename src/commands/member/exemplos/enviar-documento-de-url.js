@@ -1,5 +1,6 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
+import { SAMPLE_URLS } from "../../../utils/sample-media.js";
 
 export default {
   name: "enviar-documento-de-url",
@@ -21,7 +22,7 @@ export default {
     await delay(3000);
 
     await sendDocumentFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-document.pdf",
+      SAMPLE_URLS.document,
       "application/pdf",
       "documento-pdf-da-url.pdf"
     );
@@ -29,7 +30,7 @@ export default {
     await delay(3000);
 
     await sendDocumentFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-text.txt",
+      SAMPLE_URLS.text,
       "text/plain",
       "arquivo-texto-da-url.txt"
     );
@@ -48,9 +49,7 @@ export default {
 
     await delay(3000);
 
-    await sendDocumentFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-document.pdf"
-    );
+    await sendDocumentFromURL(SAMPLE_URLS.document);
 
     await delay(3000);
 

@@ -1,8 +1,10 @@
 import { delay } from "baileys";
-import fs from "node:fs";
-import path from "node:path";
-import { ASSETS_DIR, PREFIX } from "../../../config.js";
+import { PREFIX } from "../../../config.js";
 import { getBuffer } from "../../../utils/index.js";
+import {
+  readLocalSample,
+  readRemoteSampleBuffer,
+} from "../../../utils/sample-media.js";
 
 export default {
   name: "enviar-gif-de-buffer",
@@ -23,9 +25,7 @@ export default {
 
     await delay(3000);
 
-    const fileBuffer = fs.readFileSync(
-      path.join(ASSETS_DIR, "samples", "sample-video.mp4")
-    );
+    const fileBuffer = readLocalSample("sample-video.mp4");
 
     await sendGifFromBuffer(fileBuffer);
 
@@ -35,9 +35,7 @@ export default {
 
     await delay(3000);
 
-    const urlBuffer = await getBuffer(
-      "https://api.spiderx.com.br/storage/samples/sample-video.mp4"
-    );
+    const urlBuffer = await readRemoteSampleBuffer("sample-video.mp4", getBuffer);
 
     await sendGifFromBuffer(urlBuffer, "GIF carregado de URL para buffer!");
 

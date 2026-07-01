@@ -1,8 +1,10 @@
 import { delay } from "baileys";
-import fs from "node:fs";
-import path from "node:path";
-import { ASSETS_DIR, PREFIX } from "../../../config.js";
+import { PREFIX } from "../../../config.js";
 import { getBuffer } from "../../../utils/index.js";
+import {
+  readLocalSample,
+  readRemoteSampleBuffer,
+} from "../../../utils/sample-media.js";
 
 export default {
   name: "enviar-audio-de-buffer",
@@ -24,9 +26,7 @@ export default {
     await delay(3000);
 
     await sendAudioFromBuffer(
-      await getBuffer(
-        "https://api.spiderx.com.br/storage/samples/sample-audio.mp3"
-      )
+      await readRemoteSampleBuffer("sample-audio.mp3", getBuffer)
     );
 
     await delay(3000);
@@ -38,7 +38,7 @@ export default {
     await delay(3000);
 
     await sendAudioFromBuffer(
-      fs.readFileSync(path.join(ASSETS_DIR, "samples", "sample-audio.mp3")),
+      readLocalSample("sample-audio.mp3"),
       true
     );
 
@@ -51,7 +51,7 @@ export default {
     await delay(3000);
 
     await sendAudioFromBuffer(
-      fs.readFileSync(path.join(ASSETS_DIR, "samples", "sample-audio.mp3")),
+      readLocalSample("sample-audio.mp3"),
       false,
       false
     );
@@ -65,9 +65,7 @@ export default {
     await delay(3000);
 
     await sendAudioFromBuffer(
-      await getBuffer(
-        "https://api.spiderx.com.br/storage/samples/sample-audio.mp3"
-      ),
+      await readRemoteSampleBuffer("sample-audio.mp3", getBuffer),
       true,
       false
     );

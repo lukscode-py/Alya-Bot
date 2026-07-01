@@ -1,5 +1,6 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
+import { SAMPLE_URLS } from "../../../utils/sample-media.js";
 
 export default {
   name: "enviar-audio-de-url",
@@ -20,9 +21,7 @@ export default {
 
     await delay(3000);
 
-    await sendAudioFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-audio.mp3"
-    );
+    await sendAudioFromURL(SAMPLE_URLS.audio);
 
     await delay(3000);
 
@@ -32,10 +31,7 @@ export default {
 
     await delay(3000);
 
-    await sendAudioFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-audio.mp3",
-      true
-    );
+    await sendAudioFromURL(SAMPLE_URLS.audio, true);
 
     await delay(3000);
 
@@ -45,11 +41,7 @@ export default {
 
     await delay(3000);
 
-    await sendAudioFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-audio.mp3",
-      false,
-      false
-    );
+    await sendAudioFromURL(SAMPLE_URLS.audio, false, false);
 
     await delay(3000);
 
@@ -59,10 +51,6 @@ export default {
 
     await delay(3000);
 
-    await sendAudioFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-audio.mp3",
-      true,
-      false
-    );
+    await sendAudioFromURL(SAMPLE_URLS.audio, true, false);
   },
 };

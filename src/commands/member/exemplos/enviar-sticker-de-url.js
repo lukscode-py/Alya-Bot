@@ -1,5 +1,6 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
+import { SAMPLE_URLS } from "../../../utils/sample-media.js";
 
 export default {
   name: "enviar-sticker-de-url",
@@ -18,9 +19,7 @@ export default {
 
     await delay(3000);
 
-    await sendStickerFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-sticker.webp"
-    );
+    await sendStickerFromURL(SAMPLE_URLS.sticker);
 
     await delay(3000);
 

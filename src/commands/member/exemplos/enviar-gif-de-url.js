@@ -1,5 +1,6 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
+import { SAMPLE_URLS } from "../../../utils/sample-media.js";
 
 export default {
   name: "enviar-gif-de-url",
@@ -18,9 +19,7 @@ export default {
 
     await delay(3000);
 
-    await sendGifFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-video.mp4"
-    );
+    await sendGifFromURL(SAMPLE_URLS.video);
 
     await delay(3000);
 
@@ -28,10 +27,7 @@ export default {
 
     await delay(3000);
 
-    await sendGifFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-video.mp4",
-      "GIF carregado de uma URL externa!"
-    );
+    await sendGifFromURL(SAMPLE_URLS.video, "GIF carregado de uma URL externa!");
 
     await delay(3000);
 
@@ -40,7 +36,7 @@ export default {
     await delay(3000);
 
     await sendGifFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-video.mp4",
+      SAMPLE_URLS.video,
       `@${userLid.split("@")[0]} olha que legal este gif!`,
       [userLid]
     );
@@ -52,7 +48,7 @@ export default {
     await delay(3000);
 
     await sendGifFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-video.mp4",
+      SAMPLE_URLS.video,
       "GIF sem reply",
       undefined,
       false

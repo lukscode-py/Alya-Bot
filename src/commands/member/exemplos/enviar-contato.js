@@ -1,5 +1,6 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
+import { SAMPLE_CONTACT } from "../../../utils/sample-media.js";
 
 export default {
   name: "enviar-contato",
@@ -14,11 +15,11 @@ export default {
 
     await delay(3000);
 
-    await sendReply("Vou enviar o contato do meu criador.");
+    await sendReply("Vou enviar um contato de exemplo.");
 
     await delay(3000);
 
-    await sendContact("+55 11 99612-2056", "Dev Gui");
+    await sendContact(SAMPLE_CONTACT.phone, SAMPLE_CONTACT.name);
 
     await delay(3000);
 

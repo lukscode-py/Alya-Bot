@@ -1,5 +1,6 @@
 import { delay } from "baileys";
 import { PREFIX } from "../../../config.js";
+import { SAMPLE_URLS } from "../../../utils/sample-media.js";
 
 export default {
   name: "enviar-imagem-de-url",
@@ -19,7 +20,7 @@ export default {
     await delay(3000);
 
     await sendImageFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-image.jpg",
+      SAMPLE_URLS.image,
       "Esta é uma legenda para a imagem da URL"
     );
 
@@ -29,9 +30,7 @@ export default {
 
     await delay(3000);
 
-    await sendImageFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-image.jpg"
-    );
+    await sendImageFromURL(SAMPLE_URLS.image);
 
     await delay(3000);
 
@@ -40,7 +39,7 @@ export default {
     await delay(3000);
 
     await sendImageFromURL(
-      "https://api.spiderx.com.br/storage/samples/sample-image.jpg",
+      SAMPLE_URLS.image,
       `Logo da Alya Bot para você ${userLid.split("@")[0]}!`,
       [userLid]
     );

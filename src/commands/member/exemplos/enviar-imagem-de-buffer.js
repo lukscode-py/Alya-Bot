@@ -1,8 +1,10 @@
 import { delay } from "baileys";
-import fs from "node:fs";
-import path from "node:path";
-import { ASSETS_DIR, PREFIX } from "../../../config.js";
+import { PREFIX } from "../../../config.js";
 import { getBuffer } from "../../../utils/index.js";
+import {
+  readLocalSample,
+  readRemoteSampleBuffer,
+} from "../../../utils/sample-media.js";
 
 export default {
   name: "enviar-imagem-de-buffer",
@@ -23,9 +25,7 @@ export default {
 
     await delay(3000);
 
-    const imageBuffer = fs.readFileSync(
-      path.join(ASSETS_DIR, "samples", "sample-image.jpg")
-    );
+    const imageBuffer = readLocalSample("sample-image.jpg");
 
     await sendImageFromBuffer(
       imageBuffer,
@@ -38,9 +38,7 @@ export default {
 
     await delay(3000);
 
-    const urlBuffer = await getBuffer(
-      "https://api.spiderx.com.br/storage/samples/sample-image.jpg"
-    );
+    const urlBuffer = await readRemoteSampleBuffer("sample-image.jpg", getBuffer);
 
     await sendImageFromBuffer(
       urlBuffer,
