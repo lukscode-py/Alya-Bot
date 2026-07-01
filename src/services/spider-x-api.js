@@ -1,9 +1,3 @@
-/**
- * Funções de comunicação
- * com a API do Spider X.
- *
- * @author Dev Gui
- */
 import axios from "axios";
 
 import * as config from "../config.js";
@@ -11,14 +5,28 @@ import { getSpiderApiToken } from "../utils/database.js";
 
 const { SPIDER_API_BASE_URL } = config;
 
-/**
- * Não configure o token da Spider X API aqui, configure em: src/config.js
- */
+function isExternalApiBaseUrlConfigured(baseUrl) {
+  return typeof baseUrl === "string" && baseUrl.trim() !== "";
+}
+
 function isSpiderApiTokenConfigured(token) {
   return token && token.trim() !== "" && token !== "seu_token_aqui";
 }
 
-const messageIfTokenNotConfigured = `Token da API do Spider X não configurado!
+const messageIfBaseUrlNotConfigured = `URL da API externa não configurada!
+
+Para configurar, entre na pasta: \`src\`
+e edite o arquivo \`config.js\`:
+
+Procure por:
+
+\`export const SPIDER_API_BASE_URL = readEnv("ALYA_EXTERNAL_API_BASE_URL");\`
+
+Você também pode configurar a variável de ambiente:
+
+\`ALYA_EXTERNAL_API_BASE_URL\``;
+
+const messageIfTokenNotConfigured = `Token da API externa não configurado!
       
 Para configurar, entre na pasta: \`src\` 
 e edite o arquivo \`config.js\`:
@@ -35,14 +43,16 @@ ${config.PREFIX}set-spider-api-token seu_token_aqui
 
 Não esqueça de ver se ${config.PREFIX} é seu prefixo!
 
-Para obter o seu token, 
-crie uma conta em: https://api.spiderx.com.br
-e contrate um plano!`;
+Use um token válido do provedor externo configurado para a Alya Bot.`;
 
 export let spiderAPITokenConfigured =
   isSpiderApiTokenConfigured(getSpiderApiToken());
 
 function requireSpiderApiToken() {
+  if (!isExternalApiBaseUrlConfigured(SPIDER_API_BASE_URL)) {
+    throw new Error(messageIfBaseUrlNotConfigured);
+  }
+
   const token = getSpiderApiToken();
   spiderAPITokenConfigured = isSpiderApiTokenConfigured(token);
 

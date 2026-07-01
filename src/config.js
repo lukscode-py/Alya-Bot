@@ -4,6 +4,18 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function readEnv(name, fallback = "") {
+  const value = process.env[name];
+
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const trimmedValue = value.trim();
+
+  return trimmedValue === "" ? fallback : trimmedValue;
+}
+
 // Prefixo padrão dos comandos.
 export const PREFIX = "$";
 
@@ -48,20 +60,27 @@ export const TEMP_DIR = path.join(ASSETS_DIR, "temp");
 // Timeout em milissegundos por evento (evita banimento).
 export const TIMEOUT_IN_MILLISECONDS_BY_EVENT = 500;
 
-// Plataforma de API's
-export const SPIDER_API_BASE_URL = "https://api.spiderx.com.br/api";
+// URL base da API externa compatível com os comandos de downloads, IA e canvas.
+// Configure pelo ambiente com ALYA_EXTERNAL_API_BASE_URL ou edite abaixo.
+export const SPIDER_API_BASE_URL = readEnv("ALYA_EXTERNAL_API_BASE_URL");
 
-// Obtenha seu token, criando uma conta em: https://api.spiderx.com.br.
-export const SPIDER_API_TOKEN = "seu_token_aqui";
+// Token da API externa compatível com os comandos acima.
+// Configure pelo ambiente com ALYA_EXTERNAL_API_TOKEN ou edite abaixo.
+export const SPIDER_API_TOKEN = readEnv(
+  "ALYA_EXTERNAL_API_TOKEN",
+  "seu_token_aqui",
+);
 
-// Plataforma recomendada para o comando gerar-link.
-// Com chave propria do Linker, os links seguem a duracao do plano Linker.
-// Com token da Spider X API, os links duram 1 dia.
-export const LINKER_BASE_URL = "https://linker.devgui.dev/api";
+// URL base do serviço externo usado pelo comando gerar-link.
+// Configure pelo ambiente com ALYA_LINK_UPLOAD_BASE_URL ou edite abaixo.
+export const LINKER_BASE_URL = readEnv("ALYA_LINK_UPLOAD_BASE_URL");
 
-// Obtenha sua chave em: https://linker.devgui.dev.
-// Voce tambem pode usar seu token da Spider X API aqui.
-export const LINKER_API_KEY = "seu_token_aqui";
+// Chave do serviço externo usado pelo comando gerar-link.
+// Configure pelo ambiente com ALYA_LINK_UPLOAD_API_KEY ou edite abaixo.
+export const LINKER_API_KEY = readEnv(
+  "ALYA_LINK_UPLOAD_API_KEY",
+  "seu_token_aqui",
+);
 
 // Caso queira responder apenas um grupo específico,
 // coloque o ID dele na configuração abaixo.
@@ -74,5 +93,5 @@ export const ONLY_GROUP_ID = "";
 // caso queira ver os logs de mensagens recebidas
 export const DEVELOPER_MODE = false;
 
-// Chave da OpenAI para o comando de suporte
-export const OPENAI_API_KEY = "";
+// Chave da OpenAI para o comando de suporte.
+export const OPENAI_API_KEY = readEnv("OPENAI_API_KEY");

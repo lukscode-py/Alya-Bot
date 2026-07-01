@@ -1,34 +1,50 @@
-/**
- * Serviços de upload de imagem e geração de link.
- *
- * @author Dev Gui
- */
 import axios from "axios";
 import FormData from "form-data";
 import { LINKER_API_KEY, LINKER_BASE_URL } from "../config.js";
 
-/**
- * Não configure o token do Linker aqui, configure em: src/config.js
- */
-let linkerAPIKeyConfigured =
-  LINKER_API_KEY &&
-  LINKER_API_KEY.trim() !== "" &&
-  LINKER_API_KEY !== "seu_token_aqui";
+function isConfigured(value) {
+  return typeof value === "string" && value.trim() !== "";
+}
 
-const messageIfKeyNotConfigured = `API Key do Linker não configurada!
+function isApiKeyConfigured(value) {
+  return isConfigured(value) && value !== "seu_token_aqui";
+}
+
+function normalizeBaseUrl(baseUrl) {
+  const trimmedBaseUrl = baseUrl.trim();
+
+  return trimmedBaseUrl.endsWith("/")
+    ? trimmedBaseUrl.slice(0, -1)
+    : trimmedBaseUrl;
+}
+
+let linkerAPIKeyConfigured = isApiKeyConfigured(LINKER_API_KEY);
+
+const messageIfBaseUrlNotConfigured = `URL do serviço de upload não configurada!
+
+Para configurar, entre na pasta: \`src\`
+e edite o arquivo \`config.js\`:
+
+Procure por:
+
+\`export const LINKER_BASE_URL = readEnv("ALYA_LINK_UPLOAD_BASE_URL");\`
+
+Você também pode configurar a variável de ambiente:
+
+\`ALYA_LINK_UPLOAD_BASE_URL\``;
+
+const messageIfKeyNotConfigured = `API Key do serviço de upload não configurada!
       
 Para configurar, entre na pasta: \`src\` 
 e edite o arquivo \`config.js\`:
 
 Procure por:
 
-\`export const LINKER_API_KEY = "seu_token_aqui";\`
+\`export const LINKER_API_KEY = readEnv("ALYA_LINK_UPLOAD_API_KEY", "seu_token_aqui");\`
 
-Para obter sua API Key:
-1. Acesse: https://linker.devgui.dev
-2. Faça login ou crie uma conta entrando com sua conta Google
-3. Vá em *Configurações*
-4. Copie sua API Key`;
+Você também pode configurar a variável de ambiente:
+
+\`ALYA_LINK_UPLOAD_API_KEY\``;
 
 export async function upload(imageBuffer, filename) {
   if (!Buffer.isBuffer(imageBuffer)) {
@@ -43,6 +59,12 @@ export async function upload(imageBuffer, filename) {
     throw new Error("O buffer da imagem está vazio!");
   }
 
+  if (!isConfigured(LINKER_BASE_URL)) {
+    throw new Error(messageIfBaseUrlNotConfigured);
+  }
+
+  linkerAPIKeyConfigured = isApiKeyConfigured(LINKER_API_KEY);
+
   if (!linkerAPIKeyConfigured) {
     throw new Error(messageIfKeyNotConfigured);
   }
@@ -53,12 +75,16 @@ export async function upload(imageBuffer, filename) {
     contentType: "image/jpeg",
   });
 
-  const response = await axios.post(`${LINKER_BASE_URL}/upload`, formData, {
-    headers: {
-      "X-API-Key": LINKER_API_KEY,
-      ...formData.getHeaders(),
+  const response = await axios.post(
+    `${normalizeBaseUrl(LINKER_BASE_URL)}/upload`,
+    formData,
+    {
+      headers: {
+        "X-API-Key": LINKER_API_KEY,
+        ...formData.getHeaders(),
+      },
     },
-  });
+  );
 
   const result = response.data;
 
