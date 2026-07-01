@@ -38,7 +38,7 @@
  *
  * A imagem principal do menu fica em:
  *
- * banner.png
+ * assets/images/alya-bot-preview.png
  *
  * Também é possível trocar a imagem pelo comando set-menu-image.
  *

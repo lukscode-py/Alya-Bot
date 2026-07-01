@@ -20,14 +20,14 @@ function readEnv(name, fallback = "") {
 export const PREFIX = "$";
 
 // Emoji padrão usado nas respostas do bot.
-export const BOT_EMOJI = "🤍";
+export const BOT_EMOJI = "🤍 ";
 
 // Nome do bot (mude se preferir).
 export const BOT_NAME = "Alya Bot";
 
 // Decoração padrão usada em linhas do menu.
 export const BorderMenu = "┊";
-export const IconMenu = "⟡̇🤍֗ꕀ⭟ ";
+export const IconMenu = "╎✰ۣۜۜ͜͡";
 
 // LID do bot.
 // Para obter o LID do bot, use o comando <prefixo>lid respondendo em cima de uma mensagem do número do bot
@@ -43,7 +43,12 @@ export const OWNER_LID = "12345678901234567890@lid";
 export const ROOT_DIR = path.resolve(__dirname, "..");
 
 // Banner padrão do bot.
-export const BOT_BANNER_PATH = path.join(ROOT_DIR, "banner.png");
+export const BOT_BANNER_PATH = path.join(
+  ROOT_DIR,
+  "assets",
+  "images",
+  "alya-bot-preview.png",
+);
 
 // Diretório dos comandos
 export const COMMANDS_DIR = path.join(__dirname, "commands");
