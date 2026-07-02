@@ -63,22 +63,6 @@ function requireExternalApiToken() {
   return token;
 }
 
-export async function play(type, search) {
-  if (!search) {
-    throw new Error("Você precisa informar o que deseja buscar!");
-  }
-
-  const externalApiToken = requireExternalApiToken();
-
-  const { data } = await axios.get(
-    `${EXTERNAL_API_BASE_URL}/downloads/play-${type}?search=${encodeURIComponent(
-      search,
-    )}&api_key=${externalApiToken}`,
-  );
-
-  return data;
-}
-
 export async function download(type, url) {
   if (!url) {
     throw new Error("Você precisa informar uma URL do que deseja buscar!");
@@ -207,22 +191,6 @@ export async function pinterest(search) {
 
   const { data } = await axios.get(
     `${EXTERNAL_API_BASE_URL}/downloads/pinterest?search=${encodeURIComponent(
-      search,
-    )}&api_key=${externalApiToken}`,
-  );
-
-  return data;
-}
-
-export async function search(type, search) {
-  if (!search) {
-    throw new Error("Você precisa informar o parâmetro de pesquisa!");
-  }
-
-  const externalApiToken = requireExternalApiToken();
-
-  const { data } = await axios.get(
-    `${EXTERNAL_API_BASE_URL}/search/${type}?search=${encodeURIComponent(
       search,
     )}&api_key=${externalApiToken}`,
   );

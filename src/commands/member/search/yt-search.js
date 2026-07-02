@@ -1,10 +1,10 @@
 import { PREFIX } from "../../../config.js";
 import { InvalidParameterError, WarningError } from "../../../errors/index.js";
-import { search } from "../../../services/alya-external-api.js";
+import { searchYoutube } from "../../../services/youtube-local-service.js";
 
 export default {
   name: "yt-search",
-  description: "Consulta Google",
+  description: "Pesquisa vídeos no YouTube sem usar API externa.",
   commands: ["yt-search", "youtube-search"],
   usage: `${PREFIX}yt-search MC Hariel`,
   /**
@@ -13,42 +13,34 @@ export default {
   handle: async ({ fullArgs, sendSuccessReply }) => {
     if (fullArgs.length <= 1) {
       throw new InvalidParameterError(
-        "Você precisa fornecer uma pesquisa para o YouTube."
+        "Você precisa fornecer uma pesquisa para o YouTube.",
       );
     }
 
-    const maxLength = 100;
+    const results = await searchYoutube(fullArgs, 5);
 
-    if (fullArgs.length > maxLength) {
-      throw new InvalidParameterError(
-        `O tamanho máximo da pesquisa é de ${maxLength} caracteres.`
-      );
-    }
-
-    const data = await search("youtube", fullArgs);
-
-    if (!data) {
+    if (!results.length) {
       throw new WarningError(
-        "Não foi possível encontrar resultados para a pesquisa."
+        "Não foi possível encontrar resultados para a pesquisa.",
       );
     }
 
-    let text = "";
+    const text = results
+      .map((item, index) => {
+        return `*${index + 1}. ${item.title}*
 
-    for (const item of data) {
-      text += `Título: *${item.title}*\n\n`;
-      text += `Duração: ${item.duration}\n\n`;
-      text += `Publicado em: ${item.published_at}\n\n`;
-      text += `Views: ${item.views}\n\n`;
-      text += `URL: ${item.url}\n\n-----\n\n`;
-    }
-
-    text = text.slice(0, -2);
+╎Canal: ${item.author}
+╎Duração: ${item.duration}
+╎Publicado em: ${item.publishedAt}
+╎Views: ${item.views}
+╎URL: ${item.url}`;
+      })
+      .join("\n\n─────\n\n");
 
     await sendSuccessReply(`*Pesquisa realizada*
 
-*Termo*: ${fullArgs}
-      
+*Termo:* ${fullArgs}
+
 *Resultados*
 ${text}`);
   },
