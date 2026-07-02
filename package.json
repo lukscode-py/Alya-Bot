@@ -25,6 +25,7 @@
     "openai": "^6.33.0",
     "pino": "^10.3.1",
     "tiktoken": "^1.0.21",
+    "tmxcards": "^0.1.5",
     "youtube-dl-exec": "^3.1.8",
     "youtube-search-api": "^2.0.1"
   }

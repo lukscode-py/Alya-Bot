@@ -10,6 +10,7 @@ const MENU_SECTIONS = [
     commands: [
       "exec",
       "get-group-id",
+      "musiccard (player/orbit)",
       "off",
       "on",
       "set-menu-image",

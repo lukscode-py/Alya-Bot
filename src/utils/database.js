@@ -23,6 +23,9 @@ const PREFIX_GROUPS_FILE = "prefix-groups";
 const RESTRICTED_MESSAGES_FILE = "restricted-messages";
 const WELCOME_GROUPS_FILE = "welcome-groups";
 
+const DEFAULT_MUSIC_CARD_TEMPLATE = "player";
+const MUSIC_CARD_TEMPLATES = ["player", "orbit"];
+
 function resolveDatabaseFile(jsonFile) {
   return path.resolve(databasePath, `${jsonFile}.json`);
 }
@@ -397,4 +400,33 @@ export function getExternalApiToken() {
   const config = readObject(CONFIG_FILE);
 
   return config.external_api_token || EXTERNAL_API_TOKEN;
+}
+
+export function normalizeMusicCardTemplate(template) {
+  const normalizedTemplate = String(template || "").trim().toLowerCase();
+
+  return MUSIC_CARD_TEMPLATES.includes(normalizedTemplate)
+    ? normalizedTemplate
+    : DEFAULT_MUSIC_CARD_TEMPLATE;
+}
+
+export function getMusicCardTemplate() {
+  const config = readObject(CONFIG_FILE);
+
+  return normalizeMusicCardTemplate(config.music_card_template);
+}
+
+export function setMusicCardTemplate(template) {
+  const normalizedTemplate = normalizeMusicCardTemplate(template);
+  const config = readObject(CONFIG_FILE);
+
+  config.music_card_template = normalizedTemplate;
+
+  writeObject(CONFIG_FILE, config);
+
+  return normalizedTemplate;
+}
+
+export function listMusicCardTemplates() {
+  return [...MUSIC_CARD_TEMPLATES];
 }
