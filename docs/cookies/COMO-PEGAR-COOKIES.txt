@@ -14,10 +14,10 @@ Criar um arquivo cookies.txt no formato Netscape para o yt-dlp usar quando YouTu
 PASTAS DO BOT:
 Os cookies ficam organizados aqui:
 
-cookies/yt-dlp/youtube.txt
-cookies/yt-dlp/instagram.txt
-cookies/yt-dlp/tiktok.txt
-cookies/yt-dlp/pinterest.txt
+assets/private/cookies/yt-dlp/youtube.txt
+assets/private/cookies/yt-dlp/instagram.txt
+assets/private/cookies/yt-dlp/tiktok.txt
+assets/private/cookies/yt-dlp/pinterest.txt
 
 O bot NÃO versiona esses arquivos no Git.
 A pasta tem .gitignore para impedir commit acidental dos cookies.
@@ -35,19 +35,19 @@ ttk, tik-tok, tik -> tiktok
 pin -> pinterest
 
 COMANDO DO BOT:
-/importcookie <tipo> <cookie colado>
+<prefixo>importcookie <tipo> <cookie colado>
 
 Exemplos:
-/importcookie youtube # Netscape HTTP Cookie File...
-/importcookie instagram # Netscape HTTP Cookie File...
-/importcookie tiktok # Netscape HTTP Cookie File...
-/importcookie pinterest # Netscape HTTP Cookie File...
+<prefixo>importcookie youtube # Netscape HTTP Cookie File...
+<prefixo>importcookie instagram # Netscape HTTP Cookie File...
+<prefixo>importcookie tiktok # Netscape HTTP Cookie File...
+<prefixo>importcookie pinterest # Netscape HTTP Cookie File...
 
 Também pode enviar o arquivo cookies.txt como documento e usar:
-/importcookie youtube
+<prefixo>importcookie youtube
 
 Ou responder/marcar o arquivo cookies.txt com:
-/importcookie youtube
+<prefixo>importcookie youtube
 
 COMO PEGAR PELO CELULAR ANDROID COM FIREFOX:
 
@@ -71,13 +71,13 @@ COMO PEGAR PELO CELULAR ANDROID COM FIREFOX:
 11. Salve como cookies.txt.
 12. Envie esse arquivo para o WhatsApp do bot como documento.
 13. Use o comando:
-    /importcookie youtube
+    <prefixo>importcookie youtube
     ou:
-    /importcookie instagram
+    <prefixo>importcookie instagram
     ou:
-    /importcookie tiktok
+    <prefixo>importcookie tiktok
     ou:
-    /importcookie pinterest
+    <prefixo>importcookie pinterest
 
 COMO SABER SE O COOKIE ESTÁ CERTO:
 
@@ -98,7 +98,7 @@ SE O BOT RECLAMAR QUE O COOKIE É INVÁLIDO:
 1. Confirme que você exportou no formato Netscape.
 2. Confirme que está logado no site antes de exportar.
 3. Exporte de novo.
-4. Importe novamente com /importcookie.
+4. Importe novamente com <prefixo>importcookie.
 5. Reinicie o bot se necessário.
 
 FLUXO INTERNO DO BOT:
@@ -112,15 +112,15 @@ FLUXO INTERNO DO BOT:
 7. Se falhar mesmo com cookie, avisa que o cookie não funcionou.
 8. Se funcionar, segue o fluxo padrão e entrega mídia.
 
-NÃO COLOQUE cookies/yt-dlp/*.txt NO GIT.
+NÃO COLOQUE assets/private/cookies/yt-dlp/*.txt NO GIT.
 
 ATUALIZAÇÃO: FACEBOOK
 
 Arquivo:
-cookies/yt-dlp/facebook.txt
+assets/private/cookies/yt-dlp/facebook.txt
 
 Tipo:
-/importcookie facebook
+<prefixo>importcookie facebook
 
 Aliases:
 fb, face, facebook
@@ -131,4 +131,4 @@ Use o mesmo processo:
 3. Exporte cookies.txt com a extensão cookies.txt.
 4. Envie o arquivo para o bot.
 5. Use:
-/importcookie facebook
+<prefixo>importcookie facebook

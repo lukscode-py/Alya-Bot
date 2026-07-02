@@ -190,20 +190,7 @@ export default {
         );
       }
 
-      await sendReply(
-        `✅ Cookie de ${result.displayName} definido com sucesso!
-
-Arquivo:
-${result.path}
-
-Cookies encontrados:
-${result.cookieCount}
-
-Cookies compatíveis com ${result.displayName}:
-${result.domainCookieCount}
-
-O bot já vai usar esse cookie automaticamente quando o site bloquear download sem cookie.`,
-      );
+      await sendReply(`✅ Cookie de ${result.displayName} definido com sucesso!`);
     } catch (error) {
       errorLog(error?.stack || error?.message || String(error));
 

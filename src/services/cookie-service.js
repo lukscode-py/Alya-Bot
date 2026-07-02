@@ -1,7 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const COOKIE_ROOT_DIR = path.join(process.cwd(), "cookies", "yt-dlp");
+import { PREFIX } from "../config.js";
+
+const COOKIE_ROOT_DIR = path.join(
+  process.cwd(),
+  "assets",
+  "private",
+  "cookies",
+  "yt-dlp",
+);
 
 const COOKIE_TYPES = {
   youtube: {
@@ -49,6 +57,10 @@ function ensureCookieDirectory() {
   if (!fs.existsSync(gitignorePath)) {
     fs.writeFileSync(gitignorePath, "*\n!.gitignore\n");
   }
+}
+
+function formatCommandUsage(command) {
+  return `${PREFIX}${command}`;
 }
 
 export function listCookieTypes() {
@@ -334,8 +346,8 @@ function blockedMessage(type) {
   return (
     `${info.displayName} bloqueou a tentativa de download.\n\n` +
     `Crie/importe um cookie para tentar usar comandos relacionados ao ${info.displayName}.\n\n` +
-    `Use:\n/importcookie ${info.name} <cookies.txt colado>\n\n` +
-    `Ou envie o arquivo cookies.txt como documento e use:\n/importcookie ${info.name}`
+    `Use:\n${formatCommandUsage(`importcookie ${info.name} <cookies.txt colado>`)}\n\n` +
+    `Ou envie o arquivo cookies.txt como documento e use:\n${formatCommandUsage(`importcookie ${info.name}`)}`
   );
 }
 
@@ -346,7 +358,7 @@ function invalidCookieMessage(type, reason = "") {
   return (
     `${info.displayName} bloqueou a tentativa de download.\n\n` +
     `Tentei utilizar cookie, mas ele era inválido ou não funcionou.${suffix}\n\n` +
-    `Exporte um cookies.txt novo e importe novamente com:\n/importcookie ${info.name}`
+    `Exporte um cookies.txt novo e importe novamente com:\n${formatCommandUsage(`importcookie ${info.name}`)}`
   );
 }
 
