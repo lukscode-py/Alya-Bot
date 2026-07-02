@@ -301,3 +301,40 @@ export function buildAlyaPlayAudioMessage(video) {
 
 ꒰ ⚡ 𝐀𝐋𝐘𝐀 𝐁𝐎𝐓 ⚡ ꒱`;
 }
+
+export async function resolveYoutubeInput(input) {
+  return searchYoutube(input);
+}
+
+export function buildAlyaPlayVideoMessage(video) {
+  const title = video?.title || "Desconhecido";
+  const author = video?.author || "Desconhecido";
+  const duration = video?.duration || "Desconhecida";
+  const url = video?.url || "";
+
+  return `꒰ 🎬 𝐀𝐋𝐘𝐀 𝐏𝐋𝐀𝐘 🎬 ꒱
+𝚅ídeo encontrado com sucesso 𖹭
+
+╎✦ۣۜۜ͜͡🤍 𝗧ítulo:
+╎${title}
+
+╎❀ۣۜۜ͜͡🤍 𝗖anal:
+╎${author}
+
+╎ꕥۣۜۜ͜͡🤍 𝗗uração:
+╎${duration}
+
+╎⚘ۣۜۜ͜͡🤍 𝗙ormato:
+╎MP4 / Vídeo
+
+╎✧ۣۜۜ͜͡🤍 𝗟ink:
+╎${url}
+
+╎✦ۣۜۜ͜͡🤍 𝗦tatus:
+╎Baixando seu vídeo...
+
+╎❃ۣۜۜ͜͡🤍 Aguarde um instante,
+╎já estou preparando pra você 𖹭
+
+꒰ ⚡ 𝐀𝐋𝐘𝐀 𝐁𝐎𝐓 ⚡ ꒱`;
+}
