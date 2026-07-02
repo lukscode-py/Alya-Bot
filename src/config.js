@@ -27,7 +27,7 @@ export const BOT_NAME = "Alya Bot";
 
 // Decoração padrão usada em linhas do menu.
 export const BorderMenu = "┊";
-export const IconMenu = "╎✰ۣۜۜ͜͡";
+export const IconMenu = "🤍 ";
 
 // LID do bot.
 // Para obter o LID do bot, use o comando <prefixo>lid respondendo em cima de uma mensagem do número do bot
