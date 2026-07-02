@@ -2,7 +2,7 @@ import { PREFIX } from "../../../config.js";
 import { InvalidParameterError, WarningError } from "../../../errors/index.js";
 import {
   cleanupSocialTempFile,
-  downloadSocialVideo,
+  downloadSocialMedia,
   getSocialDownloadRuntimeInfo,
   isInstagramUrl,
 } from "../../../services/social-download-service.js";
@@ -11,13 +11,14 @@ import { errorLog } from "../../../utils/logger.js";
 
 export default {
   name: "instagram",
-  description: "Baixa vídeos/reels do Instagram localmente com yt-dlp.",
+  description: "Baixa vídeos ou imagens do Instagram localmente.",
   commands: ["instagram", "ig", "inst", "insta"],
   usage: `${PREFIX}instagram https://www.instagram.com/reel/Cx789012345/`,
   /**
    * @param {CommandHandleProps} props
    */
   handle: async ({
+    sendImageFromFile,
     sendVideoFromFile,
     fullArgs,
     sendWaitReact,
@@ -34,14 +35,19 @@ export default {
       throw new WarningError("O link não é do Instagram!");
     }
 
-    let videoPath = "";
+    let media = null;
 
     try {
       await sendWaitReact();
 
-      videoPath = await downloadSocialVideo(fullArgs, "instagram");
+      media = await downloadSocialMedia(fullArgs, "instagram");
 
-      await sendVideoFromFile(videoPath, formatSuccessfulDeliveryCaption());
+      if (media.type === "video") {
+        await sendVideoFromFile(media.path, formatSuccessfulDeliveryCaption());
+      } else {
+        await sendImageFromFile(media.path, formatSuccessfulDeliveryCaption());
+      }
+
       await sendSuccessReact();
     } catch (error) {
       const runtimeInfo = getSocialDownloadRuntimeInfo("instagram");
@@ -56,7 +62,7 @@ export default {
           "Não foi possível baixar esse conteúdo do Instagram.",
       );
     } finally {
-      cleanupSocialTempFile(videoPath);
+      cleanupSocialTempFile(media?.path);
     }
   },
 };

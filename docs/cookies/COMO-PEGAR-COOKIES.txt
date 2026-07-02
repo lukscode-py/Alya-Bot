@@ -113,3 +113,22 @@ FLUXO INTERNO DO BOT:
 8. Se funcionar, segue o fluxo padrão e entrega mídia.
 
 NÃO COLOQUE cookies/yt-dlp/*.txt NO GIT.
+
+ATUALIZAÇÃO: FACEBOOK
+
+Arquivo:
+cookies/yt-dlp/facebook.txt
+
+Tipo:
+/importcookie facebook
+
+Aliases:
+fb, face, facebook
+
+Use o mesmo processo:
+1. Abra o Facebook pelo Firefox.
+2. Faça login.
+3. Exporte cookies.txt com a extensão cookies.txt.
+4. Envie o arquivo para o bot.
+5. Use:
+/importcookie facebook

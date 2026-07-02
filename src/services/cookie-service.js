@@ -32,6 +32,13 @@ const COOKIE_TYPES = {
     aliases: ["pin", "pinterest"],
     domains: ["pinterest.com"],
   },
+  facebook: {
+    name: "facebook",
+    displayName: "Facebook",
+    fileName: "facebook.txt",
+    aliases: ["fb", "face", "facebook"],
+    domains: ["facebook.com", "fb.com"],
+  },
 };
 
 function ensureCookieDirectory() {
@@ -269,6 +276,11 @@ export function getCookieHeader(type, explicitCookiePath = "") {
   }
 
   const info = getCookieTypeInfo(type);
+
+  if (!info) {
+    return "";
+  }
+
   const cookies = parseCookieLines(fs.readFileSync(cookiePath, "utf8"))
     .filter((cookie) => isDomainAllowed(cookie.domain, info.domains))
     .map((cookie) => `${cookie.name}=${cookie.value}`);
@@ -297,6 +309,9 @@ export function isCookieBlockError(error) {
     "confirm your age",
     "age-restricted",
     "private video",
+    "private content",
+    "this content isn't available",
+    "this content is not available",
     "http error 401",
     "http error 403",
     "http error 429",

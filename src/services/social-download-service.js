@@ -29,6 +29,7 @@ const SUPPORTED_SOCIAL_HOSTS = {
   instagram: ["instagram.com"],
   tiktok: ["tiktok.com", "vm.tiktok.com", "vt.tiktok.com"],
   pinterest: ["pinterest.com", "pin.it"],
+  facebook: ["facebook.com", "fb.watch", "fb.com"],
 };
 
 function ensureTempDir() {
@@ -99,6 +100,14 @@ export function isPinterestUrl(input) {
   );
 }
 
+export function isFacebookUrl(input) {
+  const url = parseUrl(input);
+
+  return Boolean(
+    url && isHostAllowed(url.hostname, SUPPORTED_SOCIAL_HOSTS.facebook),
+  );
+}
+
 function getPlatformFromUrl(input) {
   if (isInstagramUrl(input)) {
     return "instagram";
@@ -112,25 +121,31 @@ function getPlatformFromUrl(input) {
     return "pinterest";
   }
 
+  if (isFacebookUrl(input)) {
+    return "facebook";
+  }
+
   return "default";
 }
 
-function getReferer(input) {
-  if (isInstagramUrl(input)) {
+function getReferer(platform) {
+  if (platform === "instagram") {
     return "https://www.instagram.com/";
   }
 
-  if (isTikTokUrl(input)) {
+  if (platform === "tiktok") {
     return "https://www.tiktok.com/";
   }
 
-  if (isPinterestUrl(input)) {
+  if (platform === "pinterest") {
     return "https://www.pinterest.com/";
   }
 
-  const url = parseUrl(input);
+  if (platform === "facebook") {
+    return "https://www.facebook.com/";
+  }
 
-  return url ? `${url.protocol}//${url.hostname}/` : undefined;
+  return undefined;
 }
 
 function makeOutputTarget(preferredExtension) {
@@ -195,7 +210,7 @@ function getCommonOptions(url, platform = getPlatformFromUrl(url), cookiesPath =
     concurrentFragments: 1,
     forceOverwrites: true,
     userAgent: DEFAULT_USER_AGENT,
-    referer: getReferer(url),
+    referer: getReferer(platform),
     ...getYtDlpCookieOptions(platform, cookiesPath),
   };
 }
@@ -251,7 +266,7 @@ export async function downloadSocialAudio(url, platform = getPlatformFromUrl(url
   );
 }
 
-function normalizePinterestHtml(html) {
+function normalizeHtml(html) {
   return String(html || "")
     .replace(/\\u002F/g, "/")
     .replace(/\\u0026/g, "&")
@@ -265,42 +280,101 @@ function buildAxiosHeaders(platform, cookiesPath = "") {
 
   return {
     "user-agent": DEFAULT_USER_AGENT,
-    referer: platform === "pinterest"
-      ? "https://www.pinterest.com/"
-      : undefined,
+    referer: getReferer(platform),
     accept:
       "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     ...(cookieHeader ? { cookie: cookieHeader } : {}),
   };
 }
 
-async function fetchPinterestHtml(url, cookiesPath = "") {
+async function fetchSocialHtml(url, platform, cookiesPath = "") {
   const response = await axios.get(url, {
     responseType: "text",
     timeout: 25000,
     maxRedirects: 8,
     validateStatus: (status) => status >= 200 && status < 400,
-    headers: buildAxiosHeaders("pinterest", cookiesPath),
+    headers: buildAxiosHeaders(platform, cookiesPath),
   });
 
-  const html = normalizePinterestHtml(response.data);
+  const html = normalizeHtml(response.data);
 
-  if (
-    html.includes("Log in") &&
-    html.includes("Pinterest") &&
-    !html.includes("i.pinimg.com")
-  ) {
-    throw createCookieRequiredError("Pinterest pediu login para abrir esse pin.");
+  if (isLoginWallHtml(html, platform)) {
+    throw createCookieRequiredError(`${platform} pediu login para abrir essa mídia.`);
   }
 
   return html;
+}
+
+function isLoginWallHtml(html, platform) {
+  const text = String(html || "").toLowerCase();
+
+  if (platform === "facebook") {
+    return (
+      text.includes("login") &&
+      text.includes("facebook") &&
+      !text.includes("fbcdn.net")
+    );
+  }
+
+  if (platform === "instagram") {
+    return (
+      text.includes("login") &&
+      text.includes("instagram") &&
+      !text.includes("cdninstagram.com")
+    );
+  }
+
+  if (platform === "pinterest") {
+    return (
+      text.includes("log in") &&
+      text.includes("pinterest") &&
+      !text.includes("i.pinimg.com")
+    );
+  }
+
+  return false;
 }
 
 function uniqueItems(items) {
   return [...new Set(items.filter(Boolean))];
 }
 
-function scorePinterestImageUrl(url) {
+function decodeHtmlUrl(url) {
+  return String(url || "")
+    .replace(/&amp;/g, "&")
+    .replace(/\\u0026/g, "&")
+    .replace(/\\u002F/g, "/")
+    .replace(/\\\//g, "/")
+    .replace(/\\"/g, '"');
+}
+
+function extractMetaUrls(html, kinds) {
+  const results = [];
+  const normalized = normalizeHtml(html);
+
+  for (const kind of kinds) {
+    const propertyFirst = new RegExp(
+      `<meta[^>]+(?:property|name)=["']${kind}["'][^>]+content=["']([^"']+)["'][^>]*>`,
+      "gi",
+    );
+    const contentFirst = new RegExp(
+      `<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${kind}["'][^>]*>`,
+      "gi",
+    );
+
+    for (const match of normalized.matchAll(propertyFirst)) {
+      results.push(decodeHtmlUrl(match[1]));
+    }
+
+    for (const match of normalized.matchAll(contentFirst)) {
+      results.push(decodeHtmlUrl(match[1]));
+    }
+  }
+
+  return uniqueItems(results);
+}
+
+function scoreImageUrl(url) {
   const value = String(url || "");
   let score = 0;
 
@@ -312,6 +386,18 @@ function scorePinterestImageUrl(url) {
 
   if (sizeMatch) {
     score += Number(sizeMatch[1]);
+  }
+
+  if (value.includes("scontent")) {
+    score += 500;
+  }
+
+  if (value.includes("cdninstagram")) {
+    score += 500;
+  }
+
+  if (value.includes("pinimg")) {
+    score += 500;
   }
 
   if (value.includes(".jpg") || value.includes(".jpeg")) {
@@ -329,24 +415,39 @@ function scorePinterestImageUrl(url) {
   return score;
 }
 
-function extractPinterestImageUrls(html) {
-  const normalizedHtml = normalizePinterestHtml(html);
-  const matches = normalizedHtml.match(
-    /https?:\/\/i\.pinimg\.com\/[^"'<>\\\s]+?\.(?:jpg|jpeg|png|webp)(?:\?[^"'<>\\\s]*)?/gi,
-  );
+function extractImageUrls(html) {
+  const normalizedHtml = normalizeHtml(html);
+  const metaImages = extractMetaUrls(normalizedHtml, [
+    "og:image",
+    "og:image:secure_url",
+    "twitter:image",
+  ]);
 
-  return uniqueItems(matches || []).sort(
-    (a, b) => scorePinterestImageUrl(b) - scorePinterestImageUrl(a),
+  const directImages =
+    normalizedHtml.match(
+      /https?:\/\/[^"'<>\\\s]+?\.(?:jpg|jpeg|png|webp)(?:\?[^"'<>\\\s]*)?/gi,
+    ) || [];
+
+  return uniqueItems([...metaImages, ...directImages].map(decodeHtmlUrl)).sort(
+    (a, b) => scoreImageUrl(b) - scoreImageUrl(a),
   );
 }
 
-function extractPinterestVideoUrls(html) {
-  const normalizedHtml = normalizePinterestHtml(html);
-  const matches = normalizedHtml.match(
-    /https?:\/\/v\.pinimg\.com\/[^"'<>\\\s]+?\.mp4(?:\?[^"'<>\\\s]*)?/gi,
-  );
+function extractVideoUrls(html) {
+  const normalizedHtml = normalizeHtml(html);
+  const metaVideos = extractMetaUrls(normalizedHtml, [
+    "og:video",
+    "og:video:url",
+    "og:video:secure_url",
+    "twitter:player:stream",
+  ]);
 
-  return uniqueItems(matches || []);
+  const directVideos =
+    normalizedHtml.match(
+      /https?:\/\/[^"'<>\\\s]+?\.mp4(?:\?[^"'<>\\\s]*)?/gi,
+    ) || [];
+
+  return uniqueItems([...metaVideos, ...directVideos].map(decodeHtmlUrl));
 }
 
 function getImageExtensionFromMime(mimeType) {
@@ -367,6 +468,16 @@ function getImageExtensionFromMime(mimeType) {
   return "";
 }
 
+function getExtensionFromMime(mimeType) {
+  const cleanMime = String(mimeType || "").split(";")[0].trim().toLowerCase();
+
+  if (cleanMime.startsWith("video/")) {
+    return "mp4";
+  }
+
+  return getImageExtensionFromMime(cleanMime);
+}
+
 function getExtensionFromUrl(url, fallback = "bin") {
   try {
     const extension = path
@@ -382,7 +493,7 @@ function getExtensionFromUrl(url, fallback = "bin") {
 
 async function downloadBinaryFromUrl(
   url,
-  { type, platform = "pinterest", cookiesPath = "", extension, maxBytes },
+  { type, platform, cookiesPath = "", extension, maxBytes },
 ) {
   ensureTempDir();
 
@@ -400,7 +511,7 @@ async function downloadBinaryFromUrl(
   }
 
   const contentType = String(response.headers["content-type"] || "");
-  const mimeExtension = getImageExtensionFromMime(contentType);
+  const mimeExtension = getExtensionFromMime(contentType);
   const finalExtension = mimeExtension || extension || getExtensionFromUrl(url, "bin");
   const outputPath = path.join(TEMP_DIR, getRandomName(finalExtension));
 
@@ -409,61 +520,64 @@ async function downloadBinaryFromUrl(
   return assertDownloaded(outputPath, `Não foi possível salvar o arquivo (${type}).`);
 }
 
-async function downloadPinterestImageOnce(url, cookiesPath = "") {
-  const html = await fetchPinterestHtml(url, cookiesPath);
-  const imageUrls = extractPinterestImageUrls(html);
-  const imageUrl = imageUrls[0];
+function isNoVideoFormatsError(error) {
+  const message = String(error?.stderr || error?.message || error || "");
 
-  if (!imageUrl) {
-    throw createCookieRequiredError(
-      "Não encontrei imagem pública nesse pin. Talvez o Pinterest esteja exigindo cookie.",
-    );
-  }
-
-  return downloadBinaryFromUrl(imageUrl, {
-    type: "image",
-    platform: "pinterest",
-    cookiesPath,
-    extension: getExtensionFromUrl(imageUrl, "jpg"),
-    maxBytes: SOCIAL_IMAGE_MAX_BYTES,
-  });
+  return (
+    message.includes("No video formats found") ||
+    message.includes("Requested format is not available") ||
+    message.includes("Unsupported URL")
+  );
 }
 
-async function downloadPinterestVideoByScrape(url, cookiesPath = "") {
-  const html = await fetchPinterestHtml(url, cookiesPath);
-  const videoUrls = extractPinterestVideoUrls(html);
+async function downloadScrapedVideo(url, platform, cookiesPath = "") {
+  const html = await fetchSocialHtml(url, platform, cookiesPath);
+  const videoUrls = extractVideoUrls(html);
   const videoUrl = videoUrls[0];
 
   if (!videoUrl) {
-    throw new Error("Não encontrei vídeo direto nesse link do Pinterest.");
+    throw new Error("Não encontrei vídeo direto nessa página.");
   }
 
   return downloadBinaryFromUrl(videoUrl, {
     type: "video",
-    platform: "pinterest",
+    platform,
     cookiesPath,
     extension: "mp4",
     maxBytes: SOCIAL_VIDEO_MAX_BYTES,
   });
 }
 
-function isNoVideoFormatsError(error) {
-  const message = String(error?.stderr || error?.message || error || "");
+async function downloadScrapedImage(url, platform, cookiesPath = "") {
+  const html = await fetchSocialHtml(url, platform, cookiesPath);
+  const imageUrls = extractImageUrls(html);
+  const imageUrl = imageUrls[0];
 
-  return (
-    message.includes("No video formats found") ||
-    message.includes("Requested format is not available")
-  );
+  if (!imageUrl) {
+    throw createCookieRequiredError(
+      "Não encontrei imagem pública nessa página. Talvez o site esteja exigindo cookie.",
+    );
+  }
+
+  return downloadBinaryFromUrl(imageUrl, {
+    type: "image",
+    platform,
+    cookiesPath,
+    extension: getExtensionFromUrl(imageUrl, "jpg"),
+    maxBytes: SOCIAL_IMAGE_MAX_BYTES,
+  });
 }
 
-async function downloadPinterestMediaOnce(url, cookiesPath = "") {
+async function downloadSocialMediaOnce(url, platform, cookiesPath = "") {
+  let videoError = null;
+
   try {
     const target = makeOutputTarget("mp4");
     const videoPath = await downloadWithYtDlp(
       url,
       target,
       {
-        platform: "pinterest",
+        platform,
         format: "b[ext=mp4]/bv*+ba/b",
         mergeOutputFormat: "mp4",
         maxFilesize: SOCIAL_VIDEO_MAX_FILESIZE,
@@ -476,42 +590,64 @@ async function downloadPinterestMediaOnce(url, cookiesPath = "") {
       path: videoPath,
     };
   } catch (error) {
+    videoError = error;
+
     if (!isNoVideoFormatsError(error) && isCookieBlockError(error)) {
       throw error;
     }
   }
 
   try {
-    const videoPath = await downloadPinterestVideoByScrape(url, cookiesPath);
+    const videoPath = await downloadScrapedVideo(url, platform, cookiesPath);
 
     return {
       type: "video",
       path: videoPath,
     };
-  } catch {
-    const imagePath = await downloadPinterestImageOnce(url, cookiesPath);
+  } catch (scrapeVideoError) {
+    if (isCookieBlockError(scrapeVideoError)) {
+      throw scrapeVideoError;
+    }
+  }
+
+  try {
+    const imagePath = await downloadScrapedImage(url, platform, cookiesPath);
 
     return {
       type: "image",
       path: imagePath,
     };
+  } catch (imageError) {
+    if (isCookieBlockError(imageError)) {
+      throw imageError;
+    }
+
+    throw videoError || imageError;
   }
+}
+
+export async function downloadSocialMedia(url, platform = getPlatformFromUrl(url)) {
+  return withCookieFallback(
+    platform,
+    ({ cookiesPath }) => downloadSocialMediaOnce(url, platform, cookiesPath),
+    { retryOnAnyError: false },
+  );
 }
 
 export async function downloadPinterestImage(url) {
   return withCookieFallback(
     "pinterest",
-    ({ cookiesPath }) => downloadPinterestImageOnce(url, cookiesPath),
+    ({ cookiesPath }) => downloadScrapedImage(url, "pinterest", cookiesPath),
     { retryOnAnyError: false },
   );
 }
 
 export async function downloadPinterestMedia(url) {
-  return withCookieFallback(
-    "pinterest",
-    ({ cookiesPath }) => downloadPinterestMediaOnce(url, cookiesPath),
-    { retryOnAnyError: false },
-  );
+  return downloadSocialMedia(url, "pinterest");
+}
+
+export async function downloadFacebookMedia(url) {
+  return downloadSocialMedia(url, "facebook");
 }
 
 export function cleanupSocialTempFile(filePath) {

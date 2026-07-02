@@ -2,18 +2,18 @@ import { PREFIX } from "../../../config.js";
 import { InvalidParameterError, WarningError } from "../../../errors/index.js";
 import {
   cleanupSocialTempFile,
-  downloadSocialMedia,
+  downloadFacebookMedia,
   getSocialDownloadRuntimeInfo,
-  isTikTokUrl,
+  isFacebookUrl,
 } from "../../../services/social-download-service.js";
 import { formatSuccessfulDeliveryCaption } from "../../../utils/delivery-caption.js";
 import { errorLog } from "../../../utils/logger.js";
 
 export default {
-  name: "tik-tok",
-  description: "Baixa vídeos ou imagens do TikTok localmente.",
-  commands: ["tik-tok", "ttk", "tik"],
-  usage: `${PREFIX}tik-tok https://www.tiktok.com/@usuario/video/7359413022483287301`,
+  name: "facebook",
+  description: "Baixa vídeos ou imagens do Facebook localmente.",
+  commands: ["facebook", "fb", "face"],
+  usage: `${PREFIX}facebook https://www.facebook.com/watch/?v=123456789`,
   /**
    * @param {CommandHandleProps} props
    */
@@ -26,11 +26,13 @@ export default {
     sendErrorReply,
   }) => {
     if (!fullArgs.length) {
-      throw new InvalidParameterError("Você precisa enviar uma URL do TikTok!");
+      throw new InvalidParameterError(
+        "Você precisa enviar uma URL do Facebook!",
+      );
     }
 
-    if (!isTikTokUrl(fullArgs)) {
-      throw new WarningError("O link não é do TikTok!");
+    if (!isFacebookUrl(fullArgs)) {
+      throw new WarningError("O link não é do Facebook!");
     }
 
     let media = null;
@@ -38,7 +40,7 @@ export default {
     try {
       await sendWaitReact();
 
-      media = await downloadSocialMedia(fullArgs, "tiktok");
+      media = await downloadFacebookMedia(fullArgs);
 
       if (media.type === "video") {
         await sendVideoFromFile(media.path, formatSuccessfulDeliveryCaption());
@@ -48,7 +50,7 @@ export default {
 
       await sendSuccessReact();
     } catch (error) {
-      const runtimeInfo = getSocialDownloadRuntimeInfo("tiktok");
+      const runtimeInfo = getSocialDownloadRuntimeInfo("facebook");
 
       errorLog(error?.stack || error?.message || String(error));
       errorLog(
@@ -56,7 +58,8 @@ export default {
       );
 
       await sendErrorReply(
-        error?.message || "Não foi possível baixar esse conteúdo do TikTok.",
+        error?.message ||
+          "Não foi possível baixar esse conteúdo do Facebook.",
       );
     } finally {
       cleanupSocialTempFile(media?.path);
