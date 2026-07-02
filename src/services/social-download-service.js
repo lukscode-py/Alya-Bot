@@ -5,13 +5,21 @@ import { execFileSync } from "node:child_process";
 import axios from "axios";
 import youtubeDlPackage from "youtube-dl-exec";
 
-import { ROOT_DIR, TEMP_DIR } from "../config.js";
+import { TEMP_DIR } from "../config.js";
 import { getRandomName } from "../utils/index.js";
+import {
+  createCookieRequiredError,
+  getCookieHeader,
+  getCookieRuntimeInfo,
+  getYtDlpCookieOptions,
+  isCookieBlockError,
+  withCookieFallback,
+} from "./cookie-service.js";
 
 const SOCIAL_VIDEO_MAX_FILESIZE = "75M";
 const SOCIAL_AUDIO_MAX_FILESIZE = "18M";
 const SOCIAL_IMAGE_MAX_BYTES = 16 * 1024 * 1024;
-const COOKIES_DIR = path.join(ROOT_DIR, "cookies", "yt-dlp");
+const SOCIAL_VIDEO_MAX_BYTES = 75 * 1024 * 1024;
 
 const DEFAULT_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
@@ -23,10 +31,8 @@ const SUPPORTED_SOCIAL_HOSTS = {
   pinterest: ["pinterest.com", "pin.it"],
 };
 
-const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp"]);
-
-function ensureDirectory(dirPath) {
-  fs.mkdirSync(dirPath, { recursive: true });
+function ensureTempDir() {
+  fs.mkdirSync(TEMP_DIR, { recursive: true });
 }
 
 function resolveYtDlpBinary() {
@@ -53,29 +59,6 @@ function resolveYtDlp() {
 }
 
 const ytDlp = resolveYtDlp();
-
-function resolveCookiePath(platform = "default") {
-  ensureDirectory(COOKIES_DIR);
-
-  const platformName = String(platform || "default").toLowerCase();
-  const envName = `ALYA_${platformName.toUpperCase()}_COOKIES_PATH`;
-
-  const candidates = [
-    process.env[envName]?.trim(),
-    process.env.ALYA_YTDLP_COOKIES_PATH?.trim(),
-    process.env.ALYA_YT_COOKIES_PATH?.trim(),
-    path.join(COOKIES_DIR, `${platformName}.txt`),
-    path.join(COOKIES_DIR, "default.txt"),
-  ].filter(Boolean);
-
-  return candidates.find((candidate) => fs.existsSync(candidate)) || "";
-}
-
-function getCookiesOptions(platform) {
-  const cookiesPath = resolveCookiePath(platform);
-
-  return cookiesPath ? { cookies: cookiesPath } : {};
-}
 
 function parseUrl(input) {
   try {
@@ -151,7 +134,7 @@ function getReferer(input) {
 }
 
 function makeOutputTarget(preferredExtension) {
-  ensureDirectory(TEMP_DIR);
+  ensureTempDir();
 
   const baseName = getRandomName();
   const template = path.join(TEMP_DIR, `${baseName}.%(ext)s`);
@@ -201,7 +184,7 @@ function assertDownloaded(
   return filePath;
 }
 
-function getCommonOptions(url, platform = getPlatformFromUrl(url)) {
+function getCommonOptions(url, platform = getPlatformFromUrl(url), cookiesPath = "") {
   return {
     noPlaylist: true,
     noWarnings: true,
@@ -213,16 +196,16 @@ function getCommonOptions(url, platform = getPlatformFromUrl(url)) {
     forceOverwrites: true,
     userAgent: DEFAULT_USER_AGENT,
     referer: getReferer(url),
-    ...getCookiesOptions(platform),
+    ...getYtDlpCookieOptions(platform, cookiesPath),
   };
 }
 
-async function downloadWithYtDlp(url, target, options = {}) {
+async function downloadWithYtDlp(url, target, options = {}, cookiesPath = "") {
   const { platform: optionPlatform, ...ytDlpOptions } = options;
   const platform = optionPlatform || getPlatformFromUrl(url);
 
   await ytDlp(url, {
-    ...getCommonOptions(url, platform),
+    ...getCommonOptions(url, platform, cookiesPath),
     ...ytDlpOptions,
     output: target.template,
   });
@@ -233,32 +216,137 @@ async function downloadWithYtDlp(url, target, options = {}) {
 export async function downloadSocialVideo(url, platform = getPlatformFromUrl(url)) {
   const target = makeOutputTarget("mp4");
 
-  return downloadWithYtDlp(url, target, {
-    platform,
-    format: "b[ext=mp4]/bv*+ba/b",
-    mergeOutputFormat: "mp4",
-    maxFilesize: SOCIAL_VIDEO_MAX_FILESIZE,
-  });
+  return withCookieFallback(platform, ({ cookiesPath }) =>
+    downloadWithYtDlp(
+      url,
+      target,
+      {
+        platform,
+        format: "b[ext=mp4]/bv*+ba/b",
+        mergeOutputFormat: "mp4",
+        maxFilesize: SOCIAL_VIDEO_MAX_FILESIZE,
+      },
+      cookiesPath,
+    ),
+  );
 }
 
 export async function downloadSocialAudio(url, platform = getPlatformFromUrl(url)) {
   const target = makeOutputTarget("m4a");
 
-  return downloadWithYtDlp(url, target, {
-    platform,
-    format: "ba[ext=m4a]/ba/b",
-    extractAudio: true,
-    audioFormat: "m4a",
-    audioQuality: 5,
-    maxFilesize: SOCIAL_AUDIO_MAX_FILESIZE,
-  });
+  return withCookieFallback(platform, ({ cookiesPath }) =>
+    downloadWithYtDlp(
+      url,
+      target,
+      {
+        platform,
+        format: "ba[ext=m4a]/ba/b",
+        extractAudio: true,
+        audioFormat: "m4a",
+        audioQuality: 5,
+        maxFilesize: SOCIAL_AUDIO_MAX_FILESIZE,
+      },
+      cookiesPath,
+    ),
+  );
 }
 
-async function extractMediaInfo(url, platform = getPlatformFromUrl(url)) {
-  return ytDlp(url, {
-    ...getCommonOptions(url, platform),
-    dumpSingleJson: true,
+function normalizePinterestHtml(html) {
+  return String(html || "")
+    .replace(/\\u002F/g, "/")
+    .replace(/\\u0026/g, "&")
+    .replace(/\\\//g, "/")
+    .replace(/&amp;/g, "&")
+    .replace(/\\"/g, '"');
+}
+
+function buildAxiosHeaders(platform, cookiesPath = "") {
+  const cookieHeader = cookiesPath ? getCookieHeader(platform, cookiesPath) : "";
+
+  return {
+    "user-agent": DEFAULT_USER_AGENT,
+    referer: platform === "pinterest"
+      ? "https://www.pinterest.com/"
+      : undefined,
+    accept:
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+    ...(cookieHeader ? { cookie: cookieHeader } : {}),
+  };
+}
+
+async function fetchPinterestHtml(url, cookiesPath = "") {
+  const response = await axios.get(url, {
+    responseType: "text",
+    timeout: 25000,
+    maxRedirects: 8,
+    validateStatus: (status) => status >= 200 && status < 400,
+    headers: buildAxiosHeaders("pinterest", cookiesPath),
   });
+
+  const html = normalizePinterestHtml(response.data);
+
+  if (
+    html.includes("Log in") &&
+    html.includes("Pinterest") &&
+    !html.includes("i.pinimg.com")
+  ) {
+    throw createCookieRequiredError("Pinterest pediu login para abrir esse pin.");
+  }
+
+  return html;
+}
+
+function uniqueItems(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function scorePinterestImageUrl(url) {
+  const value = String(url || "");
+  let score = 0;
+
+  if (value.includes("/originals/")) {
+    score += 100000;
+  }
+
+  const sizeMatch = value.match(/\/(\d+)x\//);
+
+  if (sizeMatch) {
+    score += Number(sizeMatch[1]);
+  }
+
+  if (value.includes(".jpg") || value.includes(".jpeg")) {
+    score += 30;
+  }
+
+  if (value.includes(".png")) {
+    score += 20;
+  }
+
+  if (value.includes(".webp")) {
+    score += 10;
+  }
+
+  return score;
+}
+
+function extractPinterestImageUrls(html) {
+  const normalizedHtml = normalizePinterestHtml(html);
+  const matches = normalizedHtml.match(
+    /https?:\/\/i\.pinimg\.com\/[^"'<>\\\s]+?\.(?:jpg|jpeg|png|webp)(?:\?[^"'<>\\\s]*)?/gi,
+  );
+
+  return uniqueItems(matches || []).sort(
+    (a, b) => scorePinterestImageUrl(b) - scorePinterestImageUrl(a),
+  );
+}
+
+function extractPinterestVideoUrls(html) {
+  const normalizedHtml = normalizePinterestHtml(html);
+  const matches = normalizedHtml.match(
+    /https?:\/\/v\.pinimg\.com\/[^"'<>\\\s]+?\.mp4(?:\?[^"'<>\\\s]*)?/gi,
+  );
+
+  return uniqueItems(matches || []);
 }
 
 function getImageExtensionFromMime(mimeType) {
@@ -279,119 +367,151 @@ function getImageExtensionFromMime(mimeType) {
   return "";
 }
 
-function getImageExtensionFromUrl(url) {
+function getExtensionFromUrl(url, fallback = "bin") {
   try {
     const extension = path
       .extname(new URL(url).pathname)
       .replace(".", "")
       .toLowerCase();
 
-    return IMAGE_EXTENSIONS.has(extension) ? extension : "";
+    return extension || fallback;
   } catch {
-    return "";
+    return fallback;
   }
 }
 
-function normalizeImageCandidate(candidate) {
-  if (!candidate?.url) {
-    return null;
-  }
+async function downloadBinaryFromUrl(
+  url,
+  { type, platform = "pinterest", cookiesPath = "", extension, maxBytes },
+) {
+  ensureTempDir();
 
-  const extension = String(candidate.ext || "").toLowerCase();
-  const width = Number(candidate.width || 0);
-  const height = Number(candidate.height || 0);
-
-  return {
-    url: candidate.url,
-    ext: IMAGE_EXTENSIONS.has(extension)
-      ? extension
-      : getImageExtensionFromUrl(candidate.url),
-    score: width * height,
-  };
-}
-
-function pickPinterestImageUrl(info) {
-  const candidates = [];
-
-  for (const format of info?.formats || []) {
-    const candidate = normalizeImageCandidate(format);
-
-    if (candidate?.url) {
-      candidates.push(candidate);
-    }
-  }
-
-  for (const thumbnail of info?.thumbnails || []) {
-    const candidate = normalizeImageCandidate(thumbnail);
-
-    if (candidate?.url) {
-      candidates.push(candidate);
-    }
-  }
-
-  const directCandidates = [
-    normalizeImageCandidate({
-      url: info?.url,
-      ext: info?.ext,
-      width: info?.width,
-      height: info?.height,
-    }),
-    normalizeImageCandidate({
-      url: info?.thumbnail,
-      width: info?.thumbnail_width,
-      height: info?.thumbnail_height,
-    }),
-  ].filter(Boolean);
-
-  candidates.push(...directCandidates);
-  candidates.sort((a, b) => b.score - a.score);
-
-  const selected = candidates.find((candidate) => candidate.url);
-
-  if (!selected?.url) {
-    throw new Error("Não encontrei uma imagem válida nesse link do Pinterest.");
-  }
-
-  return selected.url;
-}
-
-async function downloadImageFromUrl(imageUrl) {
-  ensureDirectory(TEMP_DIR);
-
-  const response = await axios.get(imageUrl, {
+  const response = await axios.get(url, {
     responseType: "arraybuffer",
-    timeout: 25000,
-    maxContentLength: SOCIAL_IMAGE_MAX_BYTES,
-    headers: {
-      "user-agent": DEFAULT_USER_AGENT,
-      referer: "https://www.pinterest.com/",
-    },
+    timeout: 30000,
+    maxContentLength: maxBytes,
+    headers: buildAxiosHeaders(platform, cookiesPath),
   });
 
   const buffer = Buffer.from(response.data);
 
   if (!buffer.length) {
-    throw new Error("A imagem do Pinterest veio vazia.");
+    throw new Error(`O arquivo veio vazio (${type}).`);
   }
 
-  const mimeExtension = getImageExtensionFromMime(response.headers["content-type"]);
-  const urlExtension = getImageExtensionFromUrl(imageUrl);
-  const extension = mimeExtension || urlExtension || "jpg";
-  const outputPath = path.join(TEMP_DIR, getRandomName(extension));
+  const contentType = String(response.headers["content-type"] || "");
+  const mimeExtension = getImageExtensionFromMime(contentType);
+  const finalExtension = mimeExtension || extension || getExtensionFromUrl(url, "bin");
+  const outputPath = path.join(TEMP_DIR, getRandomName(finalExtension));
 
   fs.writeFileSync(outputPath, buffer);
 
-  return assertDownloaded(
-    outputPath,
-    "Não foi possível salvar a imagem do Pinterest.",
+  return assertDownloaded(outputPath, `Não foi possível salvar o arquivo (${type}).`);
+}
+
+async function downloadPinterestImageOnce(url, cookiesPath = "") {
+  const html = await fetchPinterestHtml(url, cookiesPath);
+  const imageUrls = extractPinterestImageUrls(html);
+  const imageUrl = imageUrls[0];
+
+  if (!imageUrl) {
+    throw createCookieRequiredError(
+      "Não encontrei imagem pública nesse pin. Talvez o Pinterest esteja exigindo cookie.",
+    );
+  }
+
+  return downloadBinaryFromUrl(imageUrl, {
+    type: "image",
+    platform: "pinterest",
+    cookiesPath,
+    extension: getExtensionFromUrl(imageUrl, "jpg"),
+    maxBytes: SOCIAL_IMAGE_MAX_BYTES,
+  });
+}
+
+async function downloadPinterestVideoByScrape(url, cookiesPath = "") {
+  const html = await fetchPinterestHtml(url, cookiesPath);
+  const videoUrls = extractPinterestVideoUrls(html);
+  const videoUrl = videoUrls[0];
+
+  if (!videoUrl) {
+    throw new Error("Não encontrei vídeo direto nesse link do Pinterest.");
+  }
+
+  return downloadBinaryFromUrl(videoUrl, {
+    type: "video",
+    platform: "pinterest",
+    cookiesPath,
+    extension: "mp4",
+    maxBytes: SOCIAL_VIDEO_MAX_BYTES,
+  });
+}
+
+function isNoVideoFormatsError(error) {
+  const message = String(error?.stderr || error?.message || error || "");
+
+  return (
+    message.includes("No video formats found") ||
+    message.includes("Requested format is not available")
   );
 }
 
-export async function downloadPinterestImage(url) {
-  const info = await extractMediaInfo(url, "pinterest");
-  const imageUrl = pickPinterestImageUrl(info);
+async function downloadPinterestMediaOnce(url, cookiesPath = "") {
+  try {
+    const target = makeOutputTarget("mp4");
+    const videoPath = await downloadWithYtDlp(
+      url,
+      target,
+      {
+        platform: "pinterest",
+        format: "b[ext=mp4]/bv*+ba/b",
+        mergeOutputFormat: "mp4",
+        maxFilesize: SOCIAL_VIDEO_MAX_FILESIZE,
+      },
+      cookiesPath,
+    );
 
-  return downloadImageFromUrl(imageUrl);
+    return {
+      type: "video",
+      path: videoPath,
+    };
+  } catch (error) {
+    if (!isNoVideoFormatsError(error) && isCookieBlockError(error)) {
+      throw error;
+    }
+  }
+
+  try {
+    const videoPath = await downloadPinterestVideoByScrape(url, cookiesPath);
+
+    return {
+      type: "video",
+      path: videoPath,
+    };
+  } catch {
+    const imagePath = await downloadPinterestImageOnce(url, cookiesPath);
+
+    return {
+      type: "image",
+      path: imagePath,
+    };
+  }
+}
+
+export async function downloadPinterestImage(url) {
+  return withCookieFallback(
+    "pinterest",
+    ({ cookiesPath }) => downloadPinterestImageOnce(url, cookiesPath),
+    { retryOnAnyError: false },
+  );
+}
+
+export async function downloadPinterestMedia(url) {
+  return withCookieFallback(
+    "pinterest",
+    ({ cookiesPath }) => downloadPinterestMediaOnce(url, cookiesPath),
+    { retryOnAnyError: false },
+  );
 }
 
 export function cleanupSocialTempFile(filePath) {
@@ -409,12 +529,12 @@ export function cleanupSocialTempFile(filePath) {
 }
 
 export function getSocialDownloadRuntimeInfo(platform = "default") {
-  const cookiesPath = resolveCookiePath(platform);
+  const cookieInfo = getCookieRuntimeInfo(platform);
 
   return {
     binary: resolveYtDlpBinary() || "youtube-dl-exec-default",
-    cookiesDir: COOKIES_DIR,
-    cookiesPath,
-    cookies: Boolean(cookiesPath),
+    cookiesDir: cookieInfo.cookiesDir,
+    cookiesPath: cookieInfo.valid ? cookieInfo.path : "",
+    cookies: cookieInfo.valid,
   };
 }

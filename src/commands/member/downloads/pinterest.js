@@ -2,7 +2,7 @@ import { PREFIX } from "../../../config.js";
 import { InvalidParameterError, WarningError } from "../../../errors/index.js";
 import {
   cleanupSocialTempFile,
-  downloadPinterestImage,
+  downloadPinterestMedia,
   getSocialDownloadRuntimeInfo,
   isPinterestUrl,
 } from "../../../services/social-download-service.js";
@@ -11,7 +11,7 @@ import { errorLog } from "../../../utils/logger.js";
 
 export default {
   name: "pinterest",
-  description: "Baixa imagens do Pinterest localmente com yt-dlp.",
+  description: "Baixa imagens ou vídeos do Pinterest localmente.",
   commands: ["pinterest", "pin"],
   usage: `${PREFIX}pinterest https://www.pinterest.com/pin/123456789/`,
   /**
@@ -19,6 +19,7 @@ export default {
    */
   handle: async ({
     sendImageFromFile,
+    sendVideoFromFile,
     fullArgs,
     sendWaitReact,
     sendSuccessReact,
@@ -26,7 +27,7 @@ export default {
   }) => {
     if (!fullArgs.length) {
       throw new InvalidParameterError(
-        "Você precisa enviar uma URL de imagem do Pinterest!",
+        "Você precisa enviar uma URL do Pinterest!",
       );
     }
 
@@ -34,14 +35,19 @@ export default {
       throw new WarningError("O link não é do Pinterest!");
     }
 
-    let imagePath = "";
+    let media = null;
 
     try {
       await sendWaitReact();
 
-      imagePath = await downloadPinterestImage(fullArgs);
+      media = await downloadPinterestMedia(fullArgs);
 
-      await sendImageFromFile(imagePath, formatSuccessfulDeliveryCaption());
+      if (media.type === "video") {
+        await sendVideoFromFile(media.path, formatSuccessfulDeliveryCaption());
+      } else {
+        await sendImageFromFile(media.path, formatSuccessfulDeliveryCaption());
+      }
+
       await sendSuccessReact();
     } catch (error) {
       const runtimeInfo = getSocialDownloadRuntimeInfo("pinterest");
@@ -52,10 +58,11 @@ export default {
       );
 
       await sendErrorReply(
-        error?.message || "Não foi possível baixar essa imagem do Pinterest.",
+        error?.message ||
+          "Não foi possível baixar esse conteúdo do Pinterest.",
       );
     } finally {
-      cleanupSocialTempFile(imagePath);
+      cleanupSocialTempFile(media?.path);
     }
   },
 };

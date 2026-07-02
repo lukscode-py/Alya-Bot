@@ -1,0 +1,115 @@
+GUIA: COMO PEGAR COOKIES.TXT PELO CELULAR COM FIREFOX
+
+IMPORTANTE:
+- Cookie é dado sensível.
+- Cookie pode permitir acesso à sua sessão.
+- Não envie cookies para outras pessoas.
+- Não poste cookies em grupo.
+- Use apenas em conta própria.
+- Se suspeitar que vazou, saia da conta no navegador e troque a senha.
+
+OBJETIVO:
+Criar um arquivo cookies.txt no formato Netscape para o yt-dlp usar quando YouTube, Instagram, TikTok ou Pinterest bloquearem download sem login/cookie.
+
+PASTAS DO BOT:
+Os cookies ficam organizados aqui:
+
+cookies/yt-dlp/youtube.txt
+cookies/yt-dlp/instagram.txt
+cookies/yt-dlp/tiktok.txt
+cookies/yt-dlp/pinterest.txt
+
+O bot NÃO versiona esses arquivos no Git.
+A pasta tem .gitignore para impedir commit acidental dos cookies.
+
+TIPOS SUPORTADOS NO COMANDO:
+youtube
+instagram
+tiktok
+pinterest
+
+ALIASES ACEITOS:
+yt, ytb, youtuber -> youtube
+ig, insta -> instagram
+ttk, tik-tok, tik -> tiktok
+pin -> pinterest
+
+COMANDO DO BOT:
+/importcookie <tipo> <cookie colado>
+
+Exemplos:
+/importcookie youtube # Netscape HTTP Cookie File...
+/importcookie instagram # Netscape HTTP Cookie File...
+/importcookie tiktok # Netscape HTTP Cookie File...
+/importcookie pinterest # Netscape HTTP Cookie File...
+
+Também pode enviar o arquivo cookies.txt como documento e usar:
+/importcookie youtube
+
+Ou responder/marcar o arquivo cookies.txt com:
+/importcookie youtube
+
+COMO PEGAR PELO CELULAR ANDROID COM FIREFOX:
+
+1. Instale o Firefox no celular.
+2. Abra o Firefox.
+3. Entre no site que você quer usar:
+   - YouTube: https://www.youtube.com
+   - Instagram: https://www.instagram.com
+   - TikTok: https://www.tiktok.com
+   - Pinterest: https://www.pinterest.com
+
+4. Faça login na conta.
+5. Confirme que o site está funcionando logado.
+6. Instale a extensão cookies.txt no Firefox.
+   Ela exporta cookies no formato Netscape HTTP Cookie File.
+
+7. Abra o site novamente no Firefox.
+8. Abra o menu de extensões do Firefox.
+9. Toque na extensão cookies.txt.
+10. Exporte os cookies.
+11. Salve como cookies.txt.
+12. Envie esse arquivo para o WhatsApp do bot como documento.
+13. Use o comando:
+    /importcookie youtube
+    ou:
+    /importcookie instagram
+    ou:
+    /importcookie tiktok
+    ou:
+    /importcookie pinterest
+
+COMO SABER SE O COOKIE ESTÁ CERTO:
+
+Um cookies.txt válido normalmente começa com algo parecido:
+
+# Netscape HTTP Cookie File
+
+Depois tem linhas separadas por TAB com campos como:
+domínio, flag, caminho, secure, expiração, nome, valor
+
+Exemplo de estrutura:
+.youtube.com	TRUE	/	TRUE	1999999999	LOGIN_INFO	valor_aqui
+
+Não precisa ter exatamente esse cookie, mas precisa ter cookies do domínio correto.
+
+SE O BOT RECLAMAR QUE O COOKIE É INVÁLIDO:
+
+1. Confirme que você exportou no formato Netscape.
+2. Confirme que está logado no site antes de exportar.
+3. Exporte de novo.
+4. Importe novamente com /importcookie.
+5. Reinicie o bot se necessário.
+
+FLUXO INTERNO DO BOT:
+
+1. O comando tenta baixar sem cookie.
+2. Se funcionar, segue normal.
+3. Se o site bloquear, o bot procura cookie salvo.
+4. Se não existir cookie, avisa que precisa importar.
+5. Se existir mas for inválido, avisa que o cookie é inválido.
+6. Se existir e for válido, tenta baixar de novo com cookie.
+7. Se falhar mesmo com cookie, avisa que o cookie não funcionou.
+8. Se funcionar, segue o fluxo padrão e entrega mídia.
+
+NÃO COLOQUE cookies/yt-dlp/*.txt NO GIT.
