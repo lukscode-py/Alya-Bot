@@ -152,8 +152,40 @@ async function getYoutubeInfoByUrl(url) {
   });
 }
 
-function normalizeDuration(seconds) {
-  const value = Number(seconds || 0);
+function getNestedValue(object, paths = []) {
+  for (const path of paths) {
+    const value = path
+      .split(".")
+      .reduce((current, key) => current?.[key], object);
+
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+function normalizeDuration(duration) {
+  const directText = getNestedValue(
+    { duration },
+    [
+      "duration.simpleText",
+      "duration.text",
+      "duration.label",
+      "duration.duration",
+    ],
+  );
+
+  if (directText) {
+    return String(directText).trim();
+  }
+
+  if (typeof duration === "string" && duration.trim()) {
+    return duration.trim();
+  }
+
+  const value = Number(duration || 0);
 
   if (!value) {
     return "Desconhecida";
@@ -168,20 +200,43 @@ function normalizeDuration(seconds) {
 function normalizeVideoInfo(item, fallbackUrl = "") {
   const id = item?.id || item?.videoId || "";
   const url = item?.url || item?.webpage_url || fallbackUrl || (id ? `https://youtu.be/${id}` : "");
+  const author = getNestedValue(item, [
+    "channel.name",
+    "channel.title",
+    "channelTitle",
+    "channel_name",
+    "channel",
+    "uploader",
+    "uploader_id",
+    "author.name",
+    "author",
+    "ownerChannelName",
+  ]);
+  const duration = getNestedValue(item, [
+    "duration_simple_text",
+    "durationText",
+    "length.simpleText",
+    "lengthText.simpleText",
+    "lengthText",
+    "duration",
+  ]);
+  const thumbnail = getNestedValue(item, [
+    "thumbnail",
+    "thumbnail.url",
+    "bestThumbnail.url",
+    "thumbnails.0.url",
+  ]);
 
   return {
     id,
     url,
     title: item?.title || "Sem título",
-    author:
-      item?.channel ||
-      item?.channel_name ||
-      item?.uploader ||
-      item?.author ||
-      "Desconhecido",
-    duration: item?.duration_simple_text || normalizeDuration(item?.duration),
+    author: author || "Desconhecido",
+    channel: author || "Desconhecido",
+    uploader: author || "Desconhecido",
+    duration: duration ? normalizeDuration(duration) : normalizeDuration(item?.duration),
     thumbnail:
-      item?.thumbnail ||
+      thumbnail ||
       item?.thumbnails?.at?.(-1)?.url ||
       (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : ""),
   };
