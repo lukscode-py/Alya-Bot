@@ -166,6 +166,63 @@ function getNestedValue(object, paths = []) {
   return "";
 }
 
+function normalizeHttpImageUrl(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  const url = value.trim();
+
+  return /^https?:\/\//i.test(url) ? url : "";
+}
+
+function pickThumbnailUrl(value) {
+  const directUrl = normalizeHttpImageUrl(value);
+
+  if (directUrl) {
+    return directUrl;
+  }
+
+  if (Array.isArray(value)) {
+    const orderedItems = [...value].sort(
+      (a, b) => Number(b?.width || 0) - Number(a?.width || 0),
+    );
+
+    for (const item of orderedItems) {
+      const url = pickThumbnailUrl(item);
+
+      if (url) {
+        return url;
+      }
+    }
+
+    return "";
+  }
+
+  if (value && typeof value === "object") {
+    return (
+      pickThumbnailUrl(value.url) ||
+      pickThumbnailUrl(value.href) ||
+      pickThumbnailUrl(value.imageUrl) ||
+      pickThumbnailUrl(value.thumbnail) ||
+      pickThumbnailUrl(value.thumbnails)
+    );
+  }
+
+  return "";
+}
+
+function resolveVideoThumbnail(item, id = "") {
+  return (
+    pickThumbnailUrl(item?.thumbnail) ||
+    pickThumbnailUrl(item?.bestThumbnail) ||
+    pickThumbnailUrl(item?.thumbnails) ||
+    pickThumbnailUrl(item?.thumbnail_url) ||
+    pickThumbnailUrl(item?.thumbnailUrl) ||
+    (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : "")
+  );
+}
+
 function normalizeDuration(duration) {
   const directText = getNestedValue(
     { duration },
@@ -220,12 +277,7 @@ function normalizeVideoInfo(item, fallbackUrl = "") {
     "lengthText",
     "duration",
   ]);
-  const thumbnail = getNestedValue(item, [
-    "thumbnail",
-    "thumbnail.url",
-    "bestThumbnail.url",
-    "thumbnails.0.url",
-  ]);
+  const thumbnail = resolveVideoThumbnail(item, id);
 
   return {
     id,
@@ -235,10 +287,7 @@ function normalizeVideoInfo(item, fallbackUrl = "") {
     channel: author || "Desconhecido",
     uploader: author || "Desconhecido",
     duration: duration ? normalizeDuration(duration) : normalizeDuration(item?.duration),
-    thumbnail:
-      thumbnail ||
-      item?.thumbnails?.at?.(-1)?.url ||
-      (id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : ""),
+    thumbnail,
   };
 }
 
