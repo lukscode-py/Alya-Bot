@@ -1,4 +1,5 @@
 import { delay } from "baileys";
+import axios from "axios";
 import { PREFIX } from "../../../config.js";
 import {
   buildTableRows,
@@ -27,7 +28,7 @@ async function testeRich({ socket, remoteJid }) {
 
   return {
     ok: true,
-    tipos: ["markdown", "codigo", "tabela", "latex"],
+    tipos: ["markdown", "codigo", "tabela", "latex", "image"],
   };
 }`;
 
@@ -37,8 +38,32 @@ const TABLE_ROWS = [
   ["Código", "GenAICodeUXPrimitive", "testando"],
   ["Tabela", "GenATableUXPrimitive", "testando"],
   ["LaTeX", "GenAILatexUXPrimitive", "testando"],
-  ["Imagem + legenda", "imageMessage.caption", "fallback comum"],
+  ["Imagem URL", "GenAIImageUXPrimitive", "container vazio"],
+  ["Imagem injetada", "GenAIImageUXPrimitive + data URI", "testando"],
+  ["Imagine", "GenAIImaginePrimitive", "testando"],
 ];
+
+async function fetchImageAsDataUri(url) {
+  const response = await axios.get(url, {
+    responseType: "arraybuffer",
+    timeout: 15000,
+    headers: {
+      "user-agent":
+        "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36",
+    },
+  });
+
+  const contentType = response.headers?.["content-type"] || "image/jpeg";
+  const buffer = Buffer.from(response.data);
+  const base64 = buffer.toString("base64");
+
+  return {
+    base64,
+    dataUri: `data:${contentType};base64,${base64}`,
+    mimeType: contentType,
+    bytes: buffer.length,
+  };
+}
 
 export default {
   name: "teste-rich",
@@ -73,6 +98,7 @@ Lista:
 - código
 - latex
 - link
+- imagem
 
 Link:
 https://github.com/lukscode-py`),
@@ -117,9 +143,9 @@ Se algum bloco não renderizar, o WhatsApp dessa versão provavelmente não reco
       socket,
       remoteJid,
       [
-        makeTextSubmessage(`# Teste Rich Image Primitive
+        makeTextSubmessage(`# Teste Rich Image URL
 
-Esta mensagem tenta enviar imagem dentro do \`unifiedResponse.data\`.
+Esta mensagem tenta enviar imagem dentro do \`unifiedResponse.data\` usando URL simples.
 
 Tipo testado:
 \`GenAIImageUXPrimitive\``),
@@ -133,16 +159,68 @@ Tipo testado:
           altText: "Imagem de teste usada pelo comando teste-rich.",
         }),
         makeTextSubmessage(
-          "Se a imagem acima não aparecer, esse `__typename` provavelmente não é reconhecido pelo WhatsApp atual.",
+          "Se o container aparecer vazio, o WhatsApp reconheceu o primitive mas não carregou a imagem por URL.",
         ),
       ],
       {
         quoted: webMessage,
-        prefix: "alya-rich-image",
+        prefix: "alya-rich-image-url",
         capabilities: [
           "RICH_RESPONSE_IMAGE",
           "RICH_RESPONSE_MEDIA",
           "RICH_RESPONSE_UNIFIED_RESPONSE",
+        ],
+      },
+    );
+
+    await delay(1500);
+
+    const injectedImage = await fetchImageAsDataUri(TEST_IMAGE_URL);
+
+    await sendRichSubmessagesMessage(
+      socket,
+      remoteJid,
+      [
+        makeTextSubmessage(`# Teste Rich Image Injected Data URI
+
+Esta mensagem tenta injetar a imagem diretamente no payload rich.
+
+Imagem baixada:
+\`${injectedImage.bytes} bytes\`
+
+MIME:
+\`${injectedImage.mimeType}\`
+
+Tipo testado:
+\`GenAIImageUXPrimitive\`
+
+Estratégia:
+\`data:image/...;base64,...\``),
+        makeImageSubmessage({
+          url: TEST_IMAGE_URL,
+          dataUri: injectedImage.dataUri,
+          base64: injectedImage.base64,
+          mimeType: injectedImage.mimeType,
+          width: 512,
+          height: 512,
+          title: "Gato injetado",
+          caption:
+            "### Gato\n\nLegenda dentro do rich image primitive com imagem em base64.",
+          altText: "Imagem injetada em base64 no rich response.",
+        }),
+        makeTextSubmessage(
+          "Se aparecer o container mas a imagem continuar vazia, o WhatsApp provavelmente não aceita data URI nesse primitive.",
+        ),
+      ],
+      {
+        quoted: webMessage,
+        prefix: "alya-rich-image-data-uri",
+        capabilities: [
+          "RICH_RESPONSE_IMAGE",
+          "RICH_RESPONSE_MEDIA",
+          "RICH_RESPONSE_UNIFIED_RESPONSE",
+          "RICH_RESPONSE_INLINE_MEDIA",
+          "RICH_RESPONSE_EMBEDDED_MEDIA",
         ],
       },
     );
@@ -190,16 +268,16 @@ Tipo testado:
         image: {
           url: TEST_IMAGE_URL,
         },
-        caption: `# Teste imagem + legenda
+        caption: `# Teste imagem comum + legenda
 
-Esta é a tentativa de imagem com legenda.
+Esta é a tentativa de imagem com legenda fora do rich response.
 
 *Markdown comum de legenda*
 \`inline code\`
 https://github.com/lukscode-py
 
 Observação:
-Legenda de imagem usa \`imageMessage.caption\`, então ela não é o mesmo tipo de \`richResponseMessage\`. Esse envio serve para testar o limite entre imagem normal e rich response.`,
+Legenda de imagem usa \`imageMessage.caption\`, então ela não é o mesmo tipo de \`richResponseMessage\`. Esse envio serve para comparar com os testes rich.`,
       },
       {
         quoted: webMessage,
@@ -209,7 +287,7 @@ Legenda de imagem usa \`imageMessage.caption\`, então ela não é o mesmo tipo 
     await delay(1000);
 
     await sendReply(
-      "Teste enviado. A primeira mensagem é rich response. A segunda é imagem normal com legenda markdown para comparar o suporte do WhatsApp.",
+      "Teste enviado. Compare: rich por URL, rich com data URI/base64, imagine primitive e imagem comum.",
     );
   },
 };

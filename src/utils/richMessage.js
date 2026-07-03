@@ -276,19 +276,53 @@ function buildUnifiedSection(submessage) {
   }
 
   if (submessage.messageType === 9) {
+    const imageUrl =
+      submessage.imageMetadata?.dataUri ||
+      submessage.imageMetadata?.url ||
+      "";
+    const mimeType = submessage.imageMetadata?.mimeType || "image/jpeg";
+
     return {
       view_model: {
         primitive: {
           image: {
-            url: submessage.imageMetadata?.url || "",
-            mime_type: submessage.imageMetadata?.mimeType || "image/jpeg",
+            url: imageUrl,
+            uri: imageUrl,
+            href: imageUrl,
+            data_uri: submessage.imageMetadata?.dataUri || "",
+            base64: submessage.imageMetadata?.base64 || "",
+            data: submessage.imageMetadata?.base64 || "",
+            mime_type: mimeType,
             width: Number(submessage.imageMetadata?.width) || 0,
             height: Number(submessage.imageMetadata?.height) || 0,
           },
           media: {
-            url: submessage.imageMetadata?.url || "",
-            mime_type: submessage.imageMetadata?.mimeType || "image/jpeg",
+            url: imageUrl,
+            uri: imageUrl,
+            href: imageUrl,
+            data_uri: submessage.imageMetadata?.dataUri || "",
+            base64: submessage.imageMetadata?.base64 || "",
+            data: submessage.imageMetadata?.base64 || "",
+            mime_type: mimeType,
+            width: Number(submessage.imageMetadata?.width) || 0,
+            height: Number(submessage.imageMetadata?.height) || 0,
           },
+          source: {
+            url: imageUrl,
+            uri: imageUrl,
+            data_uri: submessage.imageMetadata?.dataUri || "",
+            base64: submessage.imageMetadata?.base64 || "",
+            mime_type: mimeType,
+          },
+          url: imageUrl,
+          uri: imageUrl,
+          href: imageUrl,
+          data_uri: submessage.imageMetadata?.dataUri || "",
+          base64: submessage.imageMetadata?.base64 || "",
+          data: submessage.imageMetadata?.base64 || "",
+          mime_type: mimeType,
+          width: Number(submessage.imageMetadata?.width) || 0,
+          height: Number(submessage.imageMetadata?.height) || 0,
           title: submessage.imageMetadata?.title || "",
           caption: submessage.imageMetadata?.caption || "",
           alt_text: submessage.imageMetadata?.altText || "",
