@@ -24,6 +24,7 @@ const IMAGE_USER_AGENT =
 
 const FALLBACK_IMAGE_PATHS = [
   BOT_BANNER_PATH,
+  path.join(process.cwd(), "assets", "images", "alya-bot-preview.png"),
   path.join(process.cwd(), "assets", "images", "alya-preview.png"),
   path.join(process.cwd(), "assets", "images", "alya.png"),
   path.join(process.cwd(), "assets", "images", "banner.png"),
@@ -74,9 +75,37 @@ function getMimeTypeFromPath(filePath) {
   return "image/jpeg";
 }
 
+function toDataUri({ buffer, mimeType }) {
+  if (!buffer?.length) {
+    return "";
+  }
+
+  return `data:${normalizeMimeType(mimeType)};base64,${buffer.toString("base64")}`;
+}
+
+function createImageMedia(image) {
+  if (!image?.buffer?.length) {
+    return null;
+  }
+
+  const dataUri = toDataUri(image);
+
+  return {
+    enabled: true,
+    buffer: image.buffer,
+    data: image.buffer,
+    mimeType: normalizeMimeType(image.mimeType),
+    dataUri,
+    href: dataUri,
+    url: dataUri,
+    imageUrl: dataUri,
+    path: dataUri,
+    imagePath: dataUri,
+  };
+}
+
 function extractYoutubeVideoIdFromThumbnail(thumbnail) {
   const image = String(thumbnail || "");
-
   const match = image.match(/\/(?:vi|vi_webp)\/([^/?#]+)\//);
 
   return match?.[1] || "";
@@ -94,6 +123,7 @@ function buildThumbnailCandidates(thumbnail) {
 
   if (videoId) {
     candidates.push(
+      `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
       `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
       `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
       `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`,
@@ -107,7 +137,7 @@ function buildThumbnailCandidates(thumbnail) {
 }
 
 async function fetchImageBuffer(imageUrl) {
-  const { data, headers, status } = await axios.get(imageUrl, {
+  const { data, headers } = await axios.get(imageUrl, {
     responseType: "arraybuffer",
     timeout: 12000,
     validateStatus: (code) => code >= 200 && code < 300,
@@ -117,10 +147,6 @@ async function fetchImageBuffer(imageUrl) {
       accept: "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
     },
   });
-
-  if (status < 200 || status >= 300) {
-    return null;
-  }
 
   const buffer = Buffer.from(data);
 
@@ -145,7 +171,7 @@ async function fetchThumbnailBuffer(thumbnail) {
         return image;
       }
     } catch {
-      // Tenta a próxima thumb.
+      // Tenta a próxima thumbnail.
     }
   }
 
@@ -168,36 +194,34 @@ function readFallbackImageBuffer() {
         };
       }
     } catch {
-      // Tenta o próximo fallback.
+      // Tenta o próximo fallback local.
     }
   }
 
   return null;
 }
 
-async function resolveImageBuffer(thumbnail) {
+async function resolveImageMedia(thumbnail) {
   const thumbnailBuffer = await fetchThumbnailBuffer(thumbnail);
 
   if (thumbnailBuffer?.buffer?.length) {
-    return thumbnailBuffer;
+    return createImageMedia(thumbnailBuffer);
   }
 
   const fallbackBuffer = readFallbackImageBuffer();
 
   if (fallbackBuffer?.buffer?.length) {
-    return fallbackBuffer;
+    return createImageMedia(fallbackBuffer);
   }
 
   return null;
 }
 
-async function normalizeCover(thumbnail) {
-  const image = await resolveImageBuffer(thumbnail);
-
-  if (image?.buffer?.length) {
+function normalizeCover(imageMedia) {
+  if (imageMedia?.buffer?.length || imageMedia?.dataUri) {
     return {
-      enabled: true,
-      ...image,
+      ...imageMedia,
+      opacity: 1,
     };
   }
 
@@ -207,12 +231,11 @@ async function normalizeCover(thumbnail) {
   };
 }
 
-async function normalizeBackground(thumbnail) {
-  const image = await resolveImageBuffer(thumbnail);
-
-  if (image?.buffer?.length) {
+function normalizeBackground(imageMedia) {
+  if (imageMedia?.buffer?.length || imageMedia?.dataUri) {
     return {
-      ...image,
+      ...imageMedia,
+      enabled: true,
       opacity: 0.18,
       blur: 8,
       overlayOpacity: 0.58,
@@ -249,67 +272,29 @@ export async function renderMusicCardBuffer({
   const cleanAuthor = safeText(author, BOT_NAME);
   const cleanDuration = safeText(duration, "Desconhecida");
 
-  const cover = await normalizeCover(thumbnail);
-  const background = await normalizeBackground(thumbnail);
+  const imageMedia = await resolveImageMedia(thumbnail);
+  const cover = normalizeCover(imageMedia);
+  const background = normalizeBackground(imageMedia);
 
   const card = createCard(cardId, {
     title: cleanTitle,
     subtitle: cleanAuthor,
-    author: cleanAuthor,
-    artist: cleanAuthor,
-    channel: cleanAuthor,
-    duration: cleanDuration,
-    timeEnd: cleanDuration,
     music: {
       title: cleanTitle,
       artist: cleanAuthor,
-      author: cleanAuthor,
-      channel: cleanAuthor,
       subtitle: cleanAuthor,
       duration: cleanDuration,
-      timeEnd: cleanDuration,
-      length: cleanDuration,
-      thumbnail: cover,
       cover,
-      image: cover,
-      artwork: cover,
+      thumbnail: cover,
     },
     cover,
-    image: cover,
-    thumbnail: cover,
-    artwork: cover,
-    albumArt: cover,
     background,
-    images: {
-      cover,
-      thumbnail: cover,
-      artwork: cover,
-      background,
-    },
     text: {
       badge: { value: "ALYA PLAY" },
       title: { value: cleanTitle },
       subtitle: { value: cleanAuthor },
-      author: { value: cleanAuthor },
-      artist: { value: cleanAuthor },
-      channel: { value: cleanAuthor },
-      duration: { value: cleanDuration },
       timeStart: { value: "0:00" },
       timeEnd: { value: cleanDuration },
-    },
-    info: {
-      title: cleanTitle,
-      author: cleanAuthor,
-      artist: cleanAuthor,
-      channel: cleanAuthor,
-      duration: cleanDuration,
-    },
-    metadata: {
-      title: cleanTitle,
-      author: cleanAuthor,
-      artist: cleanAuthor,
-      channel: cleanAuthor,
-      duration: cleanDuration,
     },
     tag: {
       text: "ALYA PLAY",
@@ -326,6 +311,18 @@ export async function renderMusicCardBuffer({
       returnType: "buffer",
     },
   });
+
+  // Não força duração/canal. Só reaplica mídia porque alguns templates normalizam
+  // cover/background durante createCard e podem perder campos de imagem.
+  card.cover = {
+    ...(card.cover || {}),
+    ...cover,
+  };
+
+  card.background = {
+    ...(card.background || {}),
+    ...background,
+  };
 
   const result = await renderCard(card);
 
