@@ -1,7 +1,6 @@
 import pkg from "../package.json" with { type: "json" };
 import { BOT_NAME, OWNER_NAME } from "./config.js";
 import { getPrefix } from "./utils/database.js";
-import { readMore } from "./utils/index.js";
 
 const MENU_STYLE = {
   top: "╭═•❃ུ۪ ❀ུ۪ ❁ུ۪ ❃ུ۪ ❀ུ۪•═╮",
@@ -298,7 +297,7 @@ function formatHeader({ prefix, pushName }) {
   const userName = pushName || "usuário";
 
   return [
-    `${MENU_STYLE.top}${readMore()}`,
+    MENU_STYLE.top,
     `┏│ ${MENU_STYLE.stars}`,
     `┃│Oiê @${userName}`,
     `┃│${tempo} ฅ^•ﻌ•^ฅ`,
