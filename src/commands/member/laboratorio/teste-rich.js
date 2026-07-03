@@ -3,6 +3,8 @@ import { PREFIX } from "../../../config.js";
 import {
   buildTableRows,
   makeCodeSubmessage,
+  makeImageSubmessage,
+  makeImagineSubmessage,
   makeLatexSubmessage,
   makeTableSubmessage,
   makeTextSubmessage,
@@ -105,6 +107,77 @@ Se algum bloco não renderizar, o WhatsApp dessa versão provavelmente não reco
           "RICH_RESPONSE_TABLE",
           "RICH_RESPONSE_LATEX",
           "RICH_RESPONSE_LATEX_INLINE",
+        ],
+      },
+    );
+
+    await delay(1500);
+
+    await sendRichSubmessagesMessage(
+      socket,
+      remoteJid,
+      [
+        makeTextSubmessage(`# Teste Rich Image Primitive
+
+Esta mensagem tenta enviar imagem dentro do \`unifiedResponse.data\`.
+
+Tipo testado:
+\`GenAIImageUXPrimitive\``),
+        makeImageSubmessage({
+          url: TEST_IMAGE_URL,
+          mimeType: "image/jpeg",
+          width: 512,
+          height: 512,
+          title: "Gato",
+          caption: "### Gato\n\nLegenda dentro do rich image primitive.",
+          altText: "Imagem de teste usada pelo comando teste-rich.",
+        }),
+        makeTextSubmessage(
+          "Se a imagem acima não aparecer, esse `__typename` provavelmente não é reconhecido pelo WhatsApp atual.",
+        ),
+      ],
+      {
+        quoted: webMessage,
+        prefix: "alya-rich-image",
+        capabilities: [
+          "RICH_RESPONSE_IMAGE",
+          "RICH_RESPONSE_MEDIA",
+          "RICH_RESPONSE_UNIFIED_RESPONSE",
+        ],
+      },
+    );
+
+    await delay(1500);
+
+    await sendRichSubmessagesMessage(
+      socket,
+      remoteJid,
+      [
+        makeTextSubmessage(`# Teste Rich Imagine Primitive
+
+Esta mensagem tenta usar o formato parecido com geração de imagem da Meta AI.
+
+Tipo testado:
+\`GenAIImaginePrimitive\``),
+        makeImagineSubmessage({
+          url: TEST_IMAGE_URL,
+          mimeType: "image/jpeg",
+          prompt: "Gato",
+          imagineType: "IMAGE",
+          status: "FINISHED",
+        }),
+        makeTextSubmessage(
+          "Se ficar vazio ou aparecer só texto, esse primitive depende de campos internos/servidor Meta ou de outro formato.",
+        ),
+      ],
+      {
+        quoted: webMessage,
+        prefix: "alya-rich-imagine",
+        capabilities: [
+          "RICH_RESPONSE_IMAGE",
+          "RICH_RESPONSE_MEDIA",
+          "RICH_RESPONSE_IMAGINE",
+          "RICH_RESPONSE_IMAGE_GENERATION",
         ],
       },
     );
