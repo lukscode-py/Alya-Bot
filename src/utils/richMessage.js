@@ -53,20 +53,6 @@ export function makeLatexSubmessage(latexMetadata) {
   };
 }
 
-export function makeImageSubmessage(imageMetadata) {
-  return {
-    messageType: 9,
-    imageMetadata,
-  };
-}
-
-export function makeImagineSubmessage(imagineMetadata) {
-  return {
-    messageType: 10,
-    imagineMetadata,
-  };
-}
-
 export function buildTableRows(rows) {
   return rows.map((items, index) => ({
     items: items.map((value) => String(value ?? "")),
@@ -269,87 +255,6 @@ function buildUnifiedSection(submessage) {
             height: Number(expression.height) || 0,
           },
           __typename: "GenAILatexUXPrimitive",
-        },
-        __typename: "GenAISingleLayoutViewModel",
-      },
-    };
-  }
-
-  if (submessage.messageType === 9) {
-    const imageUrl =
-      submessage.imageMetadata?.dataUri ||
-      submessage.imageMetadata?.url ||
-      "";
-    const mimeType = submessage.imageMetadata?.mimeType || "image/jpeg";
-
-    return {
-      view_model: {
-        primitive: {
-          image: {
-            url: imageUrl,
-            uri: imageUrl,
-            href: imageUrl,
-            data_uri: submessage.imageMetadata?.dataUri || "",
-            base64: submessage.imageMetadata?.base64 || "",
-            data: submessage.imageMetadata?.base64 || "",
-            mime_type: mimeType,
-            width: Number(submessage.imageMetadata?.width) || 0,
-            height: Number(submessage.imageMetadata?.height) || 0,
-          },
-          media: {
-            url: imageUrl,
-            uri: imageUrl,
-            href: imageUrl,
-            data_uri: submessage.imageMetadata?.dataUri || "",
-            base64: submessage.imageMetadata?.base64 || "",
-            data: submessage.imageMetadata?.base64 || "",
-            mime_type: mimeType,
-            width: Number(submessage.imageMetadata?.width) || 0,
-            height: Number(submessage.imageMetadata?.height) || 0,
-          },
-          source: {
-            url: imageUrl,
-            uri: imageUrl,
-            data_uri: submessage.imageMetadata?.dataUri || "",
-            base64: submessage.imageMetadata?.base64 || "",
-            mime_type: mimeType,
-          },
-          url: imageUrl,
-          uri: imageUrl,
-          href: imageUrl,
-          data_uri: submessage.imageMetadata?.dataUri || "",
-          base64: submessage.imageMetadata?.base64 || "",
-          data: submessage.imageMetadata?.base64 || "",
-          mime_type: mimeType,
-          width: Number(submessage.imageMetadata?.width) || 0,
-          height: Number(submessage.imageMetadata?.height) || 0,
-          title: submessage.imageMetadata?.title || "",
-          caption: submessage.imageMetadata?.caption || "",
-          alt_text: submessage.imageMetadata?.altText || "",
-          __typename: "GenAIImageUXPrimitive",
-        },
-        __typename: "GenAISingleLayoutViewModel",
-      },
-    };
-  }
-
-  if (submessage.messageType === 10) {
-    return {
-      view_model: {
-        primitive: {
-          media: {
-            url: submessage.imagineMetadata?.url || "",
-            mime_type: submessage.imagineMetadata?.mimeType || "image/jpeg",
-          },
-          prompt: submessage.imagineMetadata?.prompt || "",
-          imagine_type: submessage.imagineMetadata?.imagineType || "IMAGE",
-          status: {
-            status: submessage.imagineMetadata?.status || "FINISHED",
-            estimated_completion_time:
-              submessage.imagineMetadata?.estimatedCompletionTime ||
-              Math.floor(Date.now() / 1000),
-          },
-          __typename: "GenAIImaginePrimitive",
         },
         __typename: "GenAISingleLayoutViewModel",
       },
