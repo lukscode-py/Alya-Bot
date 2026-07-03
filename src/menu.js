@@ -1,121 +1,91 @@
 import pkg from "../package.json" with { type: "json" };
-import { BorderMenu, BOT_NAME, IconMenu } from "./config.js";
+import { BOT_NAME, OWNER_NAME } from "./config.js";
 import { getPrefix } from "./utils/database.js";
 import { readMore } from "./utils/index.js";
 
-const MENU_SECTIONS = [
-  {
-    title: "DONO",
-    emoji: "🌌",
-    commands: [
-      "exec",
-      "get-group-id",
-      "importcookie",
-      "musiccard (player/orbit)",
-      "off",
-      "on",
-      "set-menu-image",
-      "set-prefix",
-      "set-api-token",
-    ],
-  },
-  {
-    title: "ADMINS",
-    emoji: "⭐",
-    commands: [
-      "abrir",
-      "add-auto-responder",
-      "agendar-mensagem",
-      "anti-audio (1/0)",
-      "anti-call (1/0)",
-      "anti-document (1/0)",
-      "anti-event (1/0)",
-      "anti-image (1/0)",
-      "anti-link (1/0)",
-      "anti-lottie-sticker (1/0)",
-      "anti-payment (1/0)",
-      "anti-product (1/0)",
-      "anti-sticker (1/0)",
-      "anti-status-grupo (1/0)",
-      "anti-video (1/0)",
-      "auto-responder (1/0)",
-      "auto-sticker (1/0)",
-      "ban",
-      "delete",
-      "delete-auto-responder",
-      "exit (1/0)",
-      "fechar",
-      "hidetag",
-      "limpar-chat",
-      "link-grupo",
-      "list-auto-responder",
-      "mute",
-      "only-admin (1/0)",
-      "promover",
-      "rebaixar",
-      "revelar",
-      "saldo",
-      "set-proxy",
-      "unmute",
-      "welcome (1/0)",
-    ],
-  },
+const MENU_STYLE = {
+  top: "╭═•❃ུ۪ ❀ུ۪ ❁ུ۪ ❃ུ۪ ❀ུ۪•═╮",
+  bottom: "╰═•❃ུ۪ ❀ུ۪ ❁ུ۪ ❃ུ۪ ❀ུ۪•═╯",
+  stars: "✫✫✫✫✫",
+  love: "╎   ᶫᵒᵛᵉᵧₒᵤ ᶫᵒᵛᵉᵧₒᵤ ᶫᵒᵛᵉᵧₒᵤ",
+  commandIcon: "✰ۣۜۜ͜͡",
+};
+
+const MAIN_SECTIONS = [
   {
     title: "PRINCIPAL",
-    emoji: "🚀",
+    emoji: "🍾",
+    icon: "🍭",
     commands: [
-      "attp",
-      "brat",
-      "bratvid",
-      "cep",
-      "laboratorio-mensagens",
-      "fake-chat",
-      "gerar-link",
-      "info",
-      "meu-lid",
-      "perfil",
+      "menumemb",
+      "menuadm",
+      "menudono",
       "ping",
-      "raw-message",
-      "rename",
-      "removebg",
-      "sticker",
+      "perfil",
+      "info <comando>",
       "suporte",
-      "to-gif",
-      "to-image",
-      "to-mp3",
-      "ttp",
-      "yt-search",
     ],
   },
+  {
+    title: "ATALHOS",
+    emoji: "❤️‍🔥",
+    icon: "✨",
+    commands: ["play <nome/link>", "sticker", "brat", "gpt <pergunta>", "gemini <pergunta>"],
+  },
+];
+
+const MEMBER_SECTIONS = [
   {
     title: "DOWNLOADS",
     emoji: "🎶",
+    icon: "🍭",
     commands: [
-      "facebook",
-      "instagram",
-      "play-audio",
-      "play-video",
-      "pinterest",
-      "tik-tok",
-      "tik-tok-audio",
-      "yt-mp3",
-      "yt-mp4",
+      "play <nome/link>",
+      "play-video <nome/link>",
+      "yt-mp3 <nome/link>",
+      "yt-mp4 <nome/link>",
+      "instagram <link>",
+      "tik-tok <link>",
+      "tik-tok-audio <link>",
+      "pinterest <link>",
+      "facebook <link>",
+      "yt-search <pesquisa>",
     ],
   },
   {
-    title: "BRINCADEIRAS",
-    emoji: "🎡",
-    commands: ["abracar", "beijar", "dado", "jantar", "lutar", "matar", "socar"],
+    title: "FIGURINHAS",
+    emoji: "🌸",
+    icon: "🎠",
+    commands: [
+      "sticker",
+      "attp <texto>",
+      "ttp <texto>",
+      "brat <texto>",
+      "bratvid <texto>",
+      "rename pacote / autor",
+      "toimage",
+      "togif",
+      "ia-sticker <descrição>",
+    ],
   },
   {
     title: "IA",
     emoji: "✨",
-    commands: ["deepseek", "flux", "gemini", "gpt-5-mini", "ia-sticker"],
+    icon: "🧠",
+    commands: [
+      "gpt <pergunta>",
+      "gpt-5-mini <pergunta>",
+      "gemini <pergunta>",
+      "deepseek <pergunta>",
+      "flux <descrição>",
+    ],
   },
   {
-    title: "CANVAS",
-    emoji: "❇",
+    title: "IMAGEM",
+    emoji: "🧩",
+    icon: "❃",
     commands: [
+      "removebg",
       "blur",
       "bolsonaro",
       "cadeia",
@@ -127,43 +97,246 @@ const MENU_SECTIONS = [
       "rip",
     ],
   },
+  {
+    title: "UTILIDADES",
+    emoji: "🥎",
+    icon: "🎠",
+    commands: [
+      "cep <cep>",
+      "gerar-link",
+      "info <comando>",
+      "meu-lid",
+      "perfil",
+      "ping",
+      "suporte",
+      "fake-chat",
+      "raw-message",
+    ],
+  },
+  {
+    title: "BRINCADEIRAS",
+    emoji: "🪩",
+    icon: "🌎",
+    commands: ["abracar", "beijar", "dado", "jantar", "lutar", "matar", "socar", "tapa"],
+  },
+  {
+    title: "LABORATÓRIO",
+    emoji: "🧪",
+    icon: "⚗️",
+    commands: [
+      "laboratorio-mensagens",
+      "enviar-botoes",
+      "enviar-lista",
+      "enviar-carrossel",
+      "enviar-tabela",
+      "enviar-reels",
+      "obter-dados-grupo",
+      "obter-metadados-mensagem",
+    ],
+  },
 ];
 
-function formatCommand(prefix, command) {
-  return `${BorderMenu}${IconMenu}${prefix}${command}`;
+const ADMIN_SECTIONS = [
+  {
+    title: "GRUPO",
+    emoji: "⭐",
+    icon: "⚘",
+    commands: [
+      "abrir",
+      "fechar",
+      "welcome (1/0)",
+      "link-grupo",
+      "set-name <nome>",
+      "hide-tag <texto>",
+      "delete",
+      "limpar-chat",
+      "revelar",
+    ],
+  },
+  {
+    title: "MODERAÇÃO",
+    emoji: "🛡️",
+    icon: "✘",
+    commands: [
+      "ban @membro",
+      "mute @membro",
+      "unmute @membro",
+      "promover @membro",
+      "rebaixar @membro",
+      "warn @membro",
+      "unwarn @membro",
+      "warn-reactivate @membro",
+      "only-admin (1/0)",
+    ],
+  },
+  {
+    title: "PROTEÇÕES",
+    emoji: "🩸",
+    icon: "❃",
+    commands: [
+      "anti-link (1/0)",
+      "anti-audio (1/0)",
+      "anti-video (1/0)",
+      "anti-image (1/0)",
+      "anti-sticker (1/0)",
+      "anti-document (1/0)",
+      "anti-event (1/0)",
+      "anti-product (1/0)",
+      "anti-payment (1/0)",
+      "anti-status-grupo (1/0)",
+      "anti-lottie-sticker (1/0)",
+      "anti-call (1/0)",
+    ],
+  },
+  {
+    title: "AUTOMAÇÃO",
+    emoji: "☀️",
+    icon: "✨",
+    commands: [
+      "add-auto-responder termo / resposta",
+      "delete-auto-responder <id>",
+      "list-auto-responder",
+      "auto-responder (1/0)",
+      "auto-sticker (1/0)",
+      "agendar <msg> / <tempo>",
+      "afk <motivo>",
+      "exit (1/0)",
+      "saldo",
+      "block-wpp <telefone>",
+    ],
+  },
+];
+
+const OWNER_SECTIONS = [
+  {
+    title: "DONO",
+    emoji: "👑",
+    icon: "🍾",
+    commands: [
+      "on",
+      "off",
+      "exec <comando>",
+      "get-group-id",
+      "testing",
+      "set-prefix <prefixo>",
+      "set-menu-image",
+    ],
+  },
+  {
+    title: "SISTEMA",
+    emoji: "🌌",
+    icon: "✨",
+    commands: [
+      "set-api-token <token>",
+      "importcookie youtube <cookies.txt>",
+      "importcookie instagram <cookies.txt>",
+      "importcookie tiktok <cookies.txt>",
+      "musiccard player",
+      "musiccard orbit",
+    ],
+  },
+];
+
+function normalizeContext(context) {
+  if (typeof context === "string") {
+    return {
+      groupJid: context,
+      pushName: "",
+    };
+  }
+
+  return {
+    groupJid: context?.groupJid || context?.remoteJid || "",
+    pushName: context?.pushName || context?.pushname || "",
+  };
+}
+
+function getTimeInfo() {
+  const date = new Date();
+  const hour = date.getHours();
+
+  const tempo =
+    hour >= 5 && hour < 12
+      ? "Bom dia"
+      : hour >= 12 && hour < 18
+        ? "Boa tarde"
+        : "Boa noite";
+
+  return {
+    tempo,
+    hora: date.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+    data: date.toLocaleDateString("pt-BR"),
+  };
+}
+
+function decorateTitle(title, emoji) {
+  return [
+    `╭═• ೋ✧๑${emoji}๑✧ೋ •═╮`,
+    `╎ ${emoji}×>𝐌𝐄𝐍𝐔 ${title}<×${emoji}`,
+    `╰═• ೋ✧๑${emoji}๑✧ೋ •═╯`,
+  ].join("\n");
+}
+
+function formatCommand(prefix, command, icon) {
+  return `╎${MENU_STYLE.commandIcon}${icon} ${prefix}${command}`;
 }
 
 function formatSection(section, prefix) {
   return [
-    `╭━━⪩ ${section.title} ⪨━━`,
-    "▢",
-    ...section.commands.map((command) => formatCommand(prefix, command)),
-    "▢",
-    `╰━━─「${section.emoji}」─━━`,
+    MENU_STYLE.love,
+    decorateTitle(section.title, section.emoji),
+    ...section.commands.map((command) => formatCommand(prefix, command, section.icon)),
+    `╰═• ೋ✧๑${section.emoji}๑✧ೋ •═╯`,
   ].join("\n");
 }
 
-function formatHeader(prefix) {
-  const date = new Date();
+function formatHeader({ prefix, pushName }) {
+  const { tempo, hora, data } = getTimeInfo();
+  const userName = pushName || "usuário";
 
   return [
-    `╭━━⪩ ALYA MENU ⪨━━${readMore()}`,
-    "▢",
-    `▢ • ${BOT_NAME}`,
-    `▢ • Data: ${date.toLocaleDateString("pt-br")}`,
-    `▢ • Hora: ${date.toLocaleTimeString("pt-br")}`,
-    `▢ • Prefixo: ${prefix}`,
-    `▢ • Versão: ${pkg.version}`,
-    "▢",
-    "╰━━─「🪐」─━━",
+    `${MENU_STYLE.top}${readMore()}`,
+    `┏│ ${MENU_STYLE.stars}`,
+    `┃│Oiê @${userName}`,
+    `┃│${tempo} ฅ^•ﻌ•^ฅ`,
+    `┃│ʜᴏʀᴀ: ${hora}`,
+    `┃│ᴅᴀᴛᴀ: ${data}`,
+    `┃│ᴅᴏɴᴏ: ${OWNER_NAME}`,
+    `┃│ʙᴏᴛ: ${BOT_NAME}`,
+    `┃│ᴘʀᴇғɪxᴏ: ${prefix}`,
+    `┃│ᴠᴇʀsãᴏ: ${pkg.version}`,
+    `┗│ ${MENU_STYLE.stars}`,
+    MENU_STYLE.bottom,
   ].join("\n");
 }
 
-export function menuMessage(groupJid) {
+function buildMenu(context, sections) {
+  const { groupJid, pushName } = normalizeContext(context);
   const prefix = getPrefix(groupJid);
-  const sections = MENU_SECTIONS.map((section) =>
-    formatSection(section, prefix),
-  ).join("\n\n");
+  const body = sections.map((section) => formatSection(section, prefix)).join("\n╎\n");
 
-  return `${formatHeader(prefix)}\n\n${sections}`;
+  return `${formatHeader({ prefix, pushName })}\n\n${body}`;
+}
+
+export function mainMenuMessage(context) {
+  return buildMenu(context, MAIN_SECTIONS);
+}
+
+export function memberMenuMessage(context) {
+  return buildMenu(context, MEMBER_SECTIONS);
+}
+
+export function adminMenuMessage(context) {
+  return buildMenu(context, ADMIN_SECTIONS);
+}
+
+export function ownerMenuMessage(context) {
+  return buildMenu(context, OWNER_SECTIONS);
+}
+
+export function menuMessage(context) {
+  return mainMenuMessage(context);
 }

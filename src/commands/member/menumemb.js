@@ -1,11 +1,11 @@
 import { BOT_BANNER_PATH, PREFIX } from "../../config.js";
-import { menuMessage } from "../../menu.js";
+import { memberMenuMessage } from "../../menu.js";
 
 export default {
-  name: "menu",
-  description: "Menu principal com atalhos para menus separados.",
-  commands: ["menu", "help"],
-  usage: `${PREFIX}menu`,
+  name: "menumemb",
+  description: "Menu de comandos para membros.",
+  commands: ["menumemb", "menu-membro", "menu-membros"],
+  usage: `${PREFIX}menumemb`,
   /**
    * @param {CommandHandleProps} props
    */
@@ -14,7 +14,7 @@ export default {
 
     await sendImageFromFile(
       BOT_BANNER_PATH,
-      `\n\n${menuMessage({
+      `\n\n${memberMenuMessage({
         groupJid: remoteJid,
         pushName: webMessage?.pushName || webMessage?.notifyName,
       })}`,

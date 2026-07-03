@@ -25,6 +25,9 @@ export const BOT_EMOJI = "🤍 ";
 // Nome do bot (mude se preferir).
 export const BOT_NAME = "Alya Bot";
 
+// Nome exibido no menu.
+export const OWNER_NAME = "Dono";
+
 // Decoração padrão usada em linhas do menu.
 export const BorderMenu = "┊";
 export const IconMenu = "🤍 ";
