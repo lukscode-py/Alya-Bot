@@ -219,7 +219,10 @@ function buildUnifiedSection(submessage) {
           language: submessage.codeMetadata.codeLanguage,
           code_blocks: submessage.codeMetadata.codeBlocks.map((block) => ({
             content: String(block.codeContent || ""),
-            type: mapHighlightTypeToUnified(block.highlightType),
+            type:
+              block.type ||
+              block.unifiedType ||
+              mapHighlightTypeToUnified(block.highlightType),
           })),
           __typename: "GenAICodeUXPrimitive",
         },
