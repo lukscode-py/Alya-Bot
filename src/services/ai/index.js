@@ -398,6 +398,30 @@ export class AiService {
     };
   }
 
+  getModelsRegistry() {
+    if (!this.config) {
+      this.loadRuntimeData();
+    }
+
+    return {
+      ok: true,
+      models: this.registry.map((model) => ({
+        id: model.id,
+        name: model.name,
+        provider: model.provider,
+        family: model.family,
+        file: model.file,
+        estimatedRamMin: model.estimatedRamMin,
+        estimatedRamRecommended: model.estimatedRamRecommended,
+        recommendedFor: model.recommendedFor,
+        quality: model.quality,
+        speed: model.speed,
+        manualDownloadRequired: Boolean(model.manualDownloadRequired),
+        hasDownloadUrl: Boolean(model.downloadUrl),
+      })),
+    };
+  }
+
   getLocalStatus() {
     if (!this.config) {
       this.loadRuntimeData();
