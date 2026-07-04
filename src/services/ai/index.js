@@ -4,7 +4,14 @@ import { infoLog, warningLog } from "../../utils/logger.js";
 import { loadAiConfig, loadModelsRegistry } from "./config.js";
 import { AI_ERROR_CODES, buildAiErrorObject, createAiError } from "./errors.js";
 import { classifyProviderError, hashApiKey, orderKeysForProvider, resolveApiKeys } from "./key-rotation.js";
-import { detectLocalEnvironment, downloadLocalModel } from "./local-runtime.js";
+import {
+  askYesNo,
+  detectLocalEnvironment,
+  downloadLocalModel,
+  getLocalModelPath,
+  getLocalRuntimeStatus,
+  installLocalRuntime,
+} from "./local-runtime.js";
 import { buildAiPaths } from "./paths.js";
 import { requestGemini } from "./providers/gemini.js";
 import { requestLocalLlama } from "./providers/local-llama.js";
@@ -77,6 +84,153 @@ export class AiService {
     };
   }
 
+  shouldPromptLocalSetup() {
+    return Boolean(
+      process.stdin.isTTY &&
+        process.stdout.isTTY &&
+        !process.env.CI &&
+        !process.env.NODE_TEST_CONTEXT &&
+        !process.argv.some((arg) => /(^|\/)(test|node:test)|--test/.test(arg)),
+    );
+  }
+
+  disableLocalProvider(reason) {
+    if (this.config?.local) {
+      this.config.local.enabled = false;
+    }
+
+    if (Array.isArray(this.config?.ai?.activeProviders)) {
+      this.config.ai.activeProviders = this.config.ai.activeProviders.filter(
+        (providerName) => providerName !== "local",
+      );
+    }
+
+    warningLog(`[AI LOCAL] ${reason} Provedor local desativado automaticamente nesta execução.`);
+  }
+
+  getSelectedLocalModelInfo() {
+    const selectedModel = this.config?.local?.selectedModel;
+    return this.registry.find((item) => item.id === selectedModel) || null;
+  }
+
+  async prepareLocalProvider({ interactive = this.shouldPromptLocalSetup() } = {}) {
+    const activeProviders = this.config.ai.activeProviders || [];
+
+    if (!this.config.local?.enabled || !activeProviders.includes("local")) {
+      return {
+        ok: true,
+        skipped: true,
+      };
+    }
+
+    const runtimeStatus = getLocalRuntimeStatus(this.config.local);
+
+    if (!runtimeStatus.ready) {
+      const environment = detectLocalEnvironment();
+      const shouldPrepare =
+        Boolean(this.config.local.autoInstallRuntime) ||
+        (await askYesNo(
+          [
+            "O provedor local está ativado, mas o ambiente ainda não está preparado.",
+            `Ambiente detectado: ${environment.type}.`,
+            `Dica: ${environment.installHint}`,
+            "Deseja preparar o ambiente agora? Se cancelar, o provedor local será desativado automaticamente. (s/n) >",
+          ].join("\n"),
+          { enabled: interactive, defaultValue: false },
+        ));
+
+      if (!shouldPrepare) {
+        this.disableLocalProvider("Preparo do ambiente recusado.");
+        return {
+          ok: false,
+          disabled: true,
+          reason: "runtime-not-prepared",
+        };
+      }
+
+      try {
+        const installResult = await installLocalRuntime({
+          providerConfig: this.config.local,
+        });
+
+        infoLog(
+          `[AI LOCAL] Runtime preparado: ${installResult.runtimePath || installResult.message}`,
+        );
+      } catch (error) {
+        this.disableLocalProvider(error.message || "Falha ao preparar runtime local.");
+        return {
+          ok: false,
+          disabled: true,
+          reason: "runtime-install-failed",
+        };
+      }
+    }
+
+    const modelInfo = this.getSelectedLocalModelInfo();
+
+    if (!modelInfo) {
+      this.disableLocalProvider(
+        `Modelo local ${this.config.local.selectedModel} não está cadastrado em database/ai/models-registry.json.`,
+      );
+      return {
+        ok: false,
+        disabled: true,
+        reason: "model-not-registered",
+      };
+    }
+
+    const modelPath = getLocalModelPath(this.paths, modelInfo);
+
+    if (!fs.existsSync(modelPath)) {
+      const diskHint = `${modelInfo.sizeMb ? `Tamanho aproximado: ${modelInfo.sizeMb} MB.` : ""}`;
+      const shouldInstall =
+        Boolean(this.config.local.autoDownloadModel) ||
+        (await askYesNo(
+          [
+            `O provedor local está ativado, mas o modelo ${modelInfo.id} não está instalado.`,
+            `Caminho esperado: ${modelPath}`,
+            diskHint,
+            "Deseja instalar o modelo agora? Se cancelar, o provedor local será desativado automaticamente. (s/n) >",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+          { enabled: interactive, defaultValue: false },
+        ));
+
+      if (!shouldInstall) {
+        this.disableLocalProvider("Instalação do modelo recusada.");
+        return {
+          ok: false,
+          disabled: true,
+          reason: "model-install-refused",
+        };
+      }
+
+      try {
+        const downloadResult = await downloadLocalModel({
+          paths: this.paths,
+          modelInfo,
+          force: false,
+        });
+
+        infoLog(`[AI LOCAL] Modelo pronto em ${downloadResult.path}`);
+      } catch (error) {
+        this.disableLocalProvider(error.message || "Falha ao instalar modelo local.");
+        return {
+          ok: false,
+          disabled: true,
+          reason: "model-install-failed",
+        };
+      }
+    }
+
+    return {
+      ok: true,
+      runtimeReady: true,
+      modelInstalled: true,
+    };
+  }
+
   async initialize() {
     this.loadRuntimeData();
 
@@ -89,17 +243,9 @@ export class AiService {
       };
     }
 
+    await this.prepareLocalProvider();
+
     const activeProviders = this.getActiveProviders();
-
-    if (this.config.local?.enabled && activeProviders.includes("local")) {
-      const localStatus = this.getLocalStatus();
-
-      if (!localStatus.modelInstalled) {
-        warningLog(
-          `IA local ativa, mas o modelo ${this.config.local.selectedModel} não foi encontrado. O provedor local ficará indisponível até instalar o modelo.`,
-        );
-      }
-    }
 
     infoLog(`Serviço de IA inicializado. Provedores ativos: ${activeProviders.join(", ") || "nenhum"}.`);
     this.initialized = true;

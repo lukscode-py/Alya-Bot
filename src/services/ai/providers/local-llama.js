@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { promisify } from "node:util";
 import { AI_ERROR_CODES, createAiError } from "../errors.js";
+import { getLocalRuntimeStatus } from "../local-runtime.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -26,14 +27,6 @@ function findModel(registry, modelId) {
 
 function buildModelPath(paths, modelInfo) {
   return path.join(paths.llamaModelsDir, modelInfo.family, modelInfo.file);
-}
-
-function resolveRuntimePath(providerConfig) {
-  if (providerConfig.runtimePath && fs.existsSync(providerConfig.runtimePath)) {
-    return providerConfig.runtimePath;
-  }
-
-  return "llama-cli";
 }
 
 export async function requestLocalLlama({
@@ -65,7 +58,17 @@ export async function requestLocalLlama({
     );
   }
 
-  const runtimePath = resolveRuntimePath(providerConfig);
+  const runtimeStatus = getLocalRuntimeStatus(providerConfig);
+
+  if (!runtimeStatus.ready) {
+    throw createAiError(
+      AI_ERROR_CODES.AI_LOCAL_RUNTIME_NOT_FOUND,
+      "Runtime llama.cpp não encontrado. Reinicie o bot e aceite preparar o ambiente local ou configure local.runtimePath em src/config.js.",
+      { provider: "local", model: selectedModel },
+    );
+  }
+
+  const runtimePath = runtimeStatus.runtimePath;
   const prompt = options.prompt || messagesToPrompt(messages);
   const args = [
     "-m",

@@ -1,10 +1,10 @@
 [
   {
     "id": "qwen-2.5-0.5b",
-    "name": "Qwen 2.5 0.5B",
-    "file": "qwen2.5-0.5b.gguf",
+    "name": "Qwen2.5 0.5B Instruct Q4_K_M",
+    "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
     "provider": "llama.cpp",
-    "family": "qwen",
+    "family": "qwen2.5-0.5b",
     "sizeApprox": "não definido",
     "estimatedRamMin": "2 GB",
     "estimatedRamRecommended": "4 GB",
@@ -12,9 +12,13 @@
     "quality": "baixa a média",
     "speed": "alta",
     "description": "Modelo muito leve, recomendado para dispositivos com 4 GB de RAM ou menos. Bom para respostas simples, comandos básicos e automações curtas.",
-    "downloadUrl": null,
+    "downloadUrl": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf?download=true",
     "manualDownloadRequired": true,
-    "checksum": null
+    "checksum": null,
+    "sizeMb": 398,
+    "format": "gguf",
+    "runtime": "llama.cpp",
+    "notes": "Modelo pequeno para teste local em CPU/Termux. Qualidade limitada, mas rápido para validar o fluxo."
   },
   {
     "id": "deepseek-r1-thinking-1.5b",
