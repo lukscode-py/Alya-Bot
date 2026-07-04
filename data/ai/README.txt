@@ -33,3 +33,10 @@ Use env:VARIAVEL no config.json para ler do ambiente, por exemplo:
 
 Segurança:
 O provider-state.json salva apenas hash das API keys, nunca a key pura.
+
+Comandos já migrados para aiService:
+- $gemini / $alya -> provider gemini
+- $deepseek / $deep-seek -> provider deepseek
+- $gpt / $gpt-5 / $gpt-5-mini -> provider openai
+
+Esses comandos dependem de data/ai/config.json com ai.enabled=true e provider ativo.

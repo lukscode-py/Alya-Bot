@@ -1,6 +1,6 @@
 import { PREFIX } from "../../../config.js";
 import { InvalidParameterError } from "../../../errors/index.js";
-import { gemini } from "../../../services/alya-external-api.js";
+import { requestAiText } from "../../../services/ai/command-utils.js";
 
 export default {
   name: "gemini",
@@ -10,18 +10,21 @@ export default {
   /**
    * @param {CommandHandleProps} props
    */
-  handle: async ({ sendSuccessReply, sendWaitReply, args }) => {
-    const text = args[0];
+  handle: async ({ sendSuccessReply, sendWaitReply, args, fullArgs }) => {
+    const text = fullArgs || args.join(" ");
 
     if (!text) {
       throw new InvalidParameterError(
-        "Você precisa me dizer o que eu devo responder!"
+        "Você precisa me dizer o que eu devo responder!",
       );
     }
 
     await sendWaitReply();
 
-    const responseText = await gemini(text);
+    const responseText = await requestAiText({
+      provider: "gemini",
+      text,
+    });
 
     await sendSuccessReply(responseText);
   },

@@ -1,17 +1,17 @@
 import { PREFIX } from "../../../config.js";
 import { InvalidParameterError } from "../../../errors/index.js";
-import { deepseekV4Flash } from "../../../services/alya-external-api.js";
+import { requestAiText } from "../../../services/ai/command-utils.js";
 
 export default {
   name: "deepseek",
-  description: "Use a inteligência artificial DeepSeek V4 Flash!",
+  description: "Use a inteligência artificial DeepSeek!",
   commands: ["deepseek", "deep-seek"],
   usage: `${PREFIX}deepseek Crie um resumo curto sobre inteligência artificial`,
   /**
    * @param {CommandHandleProps} props
    */
-  handle: async ({ sendSuccessReply, sendWaitReply, args }) => {
-    const text = args[0];
+  handle: async ({ sendSuccessReply, sendWaitReply, args, fullArgs }) => {
+    const text = fullArgs || args.join(" ");
 
     if (!text) {
       throw new InvalidParameterError(
@@ -21,7 +21,10 @@ export default {
 
     await sendWaitReply();
 
-    const responseText = await deepseekV4Flash(text);
+    const responseText = await requestAiText({
+      provider: "deepseek",
+      text,
+    });
 
     await sendSuccessReply(responseText);
   },
