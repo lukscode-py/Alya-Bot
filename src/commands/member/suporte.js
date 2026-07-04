@@ -1,10 +1,27 @@
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-import OpenAI from "openai";
-import { BOT_EMOJI, OPENAI_API_KEY, PREFIX } from "../../config.js";
+import { BOT_EMOJI, PREFIX, ROOT_DIR } from "../../config.js";
 import { DangerError, WarningError } from "../../errors/index.js";
+import { aiService } from "../../services/ai/index.js";
 import { getRandomName } from "../../utils/index.js";
+
+function buildAiFailureMessage(result) {
+  if (!result?.attempts?.length) {
+    return result?.message || "Serviço de IA indisponível.";
+  }
+
+  return result.attempts
+    .map((attempt) => {
+      const error = attempt.error?.error || "erro";
+      const message = attempt.error?.message || "sem mensagem";
+      return `${attempt.provider}: ${error} - ${message}`;
+    })
+    .join("\n");
+}
+
+function readSupportFile(...fileParts) {
+  return fs.readFileSync(path.resolve(ROOT_DIR, ...fileParts), "utf-8");
+}
 
 export default {
   name: "suporte",
@@ -31,12 +48,6 @@ Você também pode escrever o texto e responder a mensagem com o comando ${PREFI
     downloadImage,
     webMessage,
   }) => {
-    if (!OPENAI_API_KEY) {
-      throw new WarningError(
-        "O suporte inteligente não está disponível no momento. Entre em contato com o administrador do bot!",
-      );
-    }
-
     if (isVideo) {
       throw new WarningError(
         "Não consigo interpretar vídeos ainda! Envie uma imagem ou texto!",
@@ -73,9 +84,6 @@ Faça sua pergunta sobre mim que eu te ajudarei!
 
     await sendWaitReply("Analisando sua pergunta...");
 
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-
     const finalText = doubleContext
       ? `Contexto anterior: ${replyText}\n\nNova questão: ${text}`
       : text;
@@ -102,10 +110,6 @@ Faça sua pergunta sobre mim que eu te ajudarei!
     if (isImage) {
       imagePath = await downloadImage(webMessage, getRandomName());
     }
-
-    const openai = new OpenAI({
-      apiKey: OPENAI_API_KEY,
-    });
 
     const messages = [
       {
@@ -137,66 +141,42 @@ sem mencionar Pterodactyl, pois os iniciantes não sabem o que é (exceto se per
 
     messages.push({
       role: "system",
-      content: fs.readFileSync(
-        path.resolve(__dirname, "..", "..", "..", "AGENTS.md"),
-        "utf-8",
-      ),
+      content: readSupportFile("AGENTS.md"),
     });
 
     messages.push({
       role: "system",
-      content: fs.readFileSync(
-        path.resolve(__dirname, "..", "..", "..", "README.md"),
-        "utf-8",
-      ),
+      content: readSupportFile("README.md"),
     });
 
     messages.push({
       role: "system",
-      content: fs.readFileSync(
-        path.resolve(__dirname, "..", "..", "..", "CONTRIBUTING.md"),
-        "utf-8",
-      ),
+      content: readSupportFile("CONTRIBUTING.md"),
     });
 
     messages.push({
       role: "system",
-      content: fs.readFileSync(
-        path.resolve(__dirname, "..", "..", "..", "package.json"),
-        "utf-8",
-      ),
+      content: readSupportFile("package.json"),
     });
 
     messages.push({
       role: "system",
-      content: fs.readFileSync(
-        path.resolve(__dirname, "..", "..", "menu.js"),
-        "utf-8",
-      ),
+      content: readSupportFile("src", "menu.js"),
     });
 
     messages.push({
       role: "system",
-      content: fs.readFileSync(
-        path.resolve(__dirname, "..", "..", "connection.js"),
-        "utf-8",
-      ),
+      content: readSupportFile("src", "connection.js"),
     });
 
     messages.push({
       role: "system",
-      content: fs.readFileSync(
-        path.resolve(__dirname, "..", "..", "loader.js"),
-        "utf-8",
-      ),
+      content: readSupportFile("src", "loader.js"),
     });
 
     messages.push({
       role: "system",
-      content: fs.readFileSync(
-        path.resolve(__dirname, "..", "..", "@types", "index.d.ts"),
-        "utf-8",
-      ),
+      content: readSupportFile("src", "@types", "index.d.ts"),
     });
 
     const userMessage = {
@@ -251,14 +231,29 @@ sem mencionar Pterodactyl, pois os iniciantes não sabem o que é (exceto se per
 
     messages.push(userMessage);
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-5.4-mini",
+    const result = await aiService.request({
+      provider: "openai",
       messages: messages,
-      reasoning_effort: "low",
-      max_completion_tokens: 2048,
+      allowProviderFallback: !isImage,
+      options: {
+        body: {
+          reasoning_effort: "low",
+          max_completion_tokens: 2048,
+        },
+      },
     });
 
-    const answer = response.choices[0].message.content.trim();
+    if (!result.ok) {
+      throw new WarningError(
+        [
+          "O suporte inteligente não está disponível no momento.",
+          "",
+          buildAiFailureMessage(result),
+        ].join("\n"),
+      );
+    }
+
+    const answer = result.text?.trim();
 
     if (!answer) {
       throw new DangerError(
