@@ -1,5 +1,6 @@
 import { connect } from "./connection.js";
 import { load } from "./loader.js";
+import { aiService } from "./services/ai/index.js";
 import { badMacHandler } from "./utils/badMacHandler.js";
 import {
   bannerLog,
@@ -58,6 +59,7 @@ async function startAlyaBot() {
 
     bannerLog();
     infoLog("Inicializando núcleo da Alya Bot...");
+    await aiService.initialize();
 
     reportBadMacStats();
 
