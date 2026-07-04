@@ -81,7 +81,7 @@ export class AiService {
     this.loadRuntimeData();
 
     if (!this.config.ai.enabled) {
-      infoLog("Serviço de IA desativado em database/ai/config.json.");
+      infoLog("Serviço de IA desativado em src/config.js.");
       this.initialized = true;
       return {
         ok: true,

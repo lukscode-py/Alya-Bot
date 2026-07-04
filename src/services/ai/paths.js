@@ -6,8 +6,6 @@ export function buildAiPaths(rootDir) {
 
   return {
     baseDir,
-    configPath: path.join(baseDir, "config.json"),
-    configExamplePath: path.join(baseDir, "config.example.jsonc"),
     statePath: path.join(baseDir, "provider-state.json"),
     modelsRegistryPath: path.join(baseDir, "models-registry.json"),
     modelsDir,

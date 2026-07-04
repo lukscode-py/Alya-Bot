@@ -25,6 +25,5 @@ downloads/
 
 # Local AI/aicmd development guide
 AGENTS_DEV.md
-database/ai/config.json
 database/ai/provider-state.json
 assets/ai/models/

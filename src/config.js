@@ -101,3 +101,159 @@ export const ONLY_GROUP_ID = "";
 // caso queira ver os logs de mensagens recebidas
 export const DEVELOPER_MODE = false;
 
+
+// =====================================================
+// CONFIGURAÇÃO CENTRAL DE INTELIGÊNCIA ARTIFICIAL
+// =====================================================
+//
+// Toda configuração da IA fica aqui para seguir o padrão do bot.
+// Não crie config separada em JSON para IA.
+//
+// Dicas:
+// - enabled: true ativa o serviço central de IA.
+// - activeProviders define quais provedores podem ser usados.
+// - defaultProvider é o provedor usado quando nenhum comando escolher um.
+// - fallbackProviders são usados quando o provedor principal falhar.
+// - apiKeys aceita várias keys para rotação inteligente.
+// - Use readEnv("NOME_DA_ENV") para não colocar key direto no código.
+// - Se quiser key direta, coloque string normal dentro do array apiKeys.
+// - provider-state fica em database/ai/provider-state.json e salva apenas hashes.
+// - modelos locais GGUF ficam em assets/ai/models/.
+//
+// Exemplos de apiKeys:
+// apiKeys: [readEnv("GEMINI_API_KEY")]
+// apiKeys: ["key_1", "key_2", "key_3"]
+//
+export const AI_CONFIG = {
+  ai: {
+    enabled: false,
+
+    defaultProvider: "gemini",
+
+    fallbackProviders: [
+      "openrouter",
+      "openai",
+      "deepseek",
+      "openaiCompatible",
+      "local",
+    ],
+
+    activeProviders: [
+      "gemini",
+      "openrouter",
+      "openai",
+      "deepseek",
+      "openaiCompatible",
+      "local",
+    ],
+  },
+
+  providers: {
+    gemini: {
+      enabled: false,
+      kind: "gemini",
+      name: "Gemini",
+      defaultModel: "gemini-1.5-flash",
+      allowedModels: [
+        "gemini-1.5-flash",
+        "gemini-1.5-pro",
+        "gemini-2.0-flash",
+      ],
+      apiKeys: [readEnv("GEMINI_API_KEY")],
+      timeout: 30000,
+      retries: 1,
+      cooldownMs: 3600000,
+      rotationStrategy: "last-working-first",
+      priority: 10,
+      fallbackProviders: ["openrouter", "openaiCompatible"],
+    },
+
+    openai: {
+      enabled: false,
+      kind: "openaiCompatible",
+      name: "OpenAI",
+      baseURL: "https://api.openai.com/v1",
+      defaultModel: "gpt-4o-mini",
+      allowedModels: ["gpt-4o-mini", "gpt-4.1-mini", "gpt-5.4-mini"],
+      apiKeys: [readEnv("OPENAI_API_KEY")],
+      timeout: 30000,
+      retries: 1,
+      cooldownMs: 3600000,
+      rotationStrategy: "last-working-first",
+      priority: 20,
+      fallbackProviders: ["openrouter", "gemini"],
+    },
+
+    deepseek: {
+      enabled: false,
+      kind: "openaiCompatible",
+      name: "DeepSeek",
+      baseURL: "https://api.deepseek.com/v1",
+      defaultModel: "deepseek-chat",
+      allowedModels: ["deepseek-chat", "deepseek-reasoner"],
+      apiKeys: [readEnv("DEEPSEEK_API_KEY")],
+      timeout: 30000,
+      retries: 1,
+      cooldownMs: 3600000,
+      rotationStrategy: "last-working-first",
+      priority: 30,
+      fallbackProviders: ["openrouter", "gemini"],
+    },
+
+    openrouter: {
+      enabled: false,
+      kind: "openaiCompatible",
+      name: "OpenRouter",
+      baseURL: "https://openrouter.ai/api/v1",
+      defaultModel: "openai/gpt-4o-mini",
+      allowedModels: [],
+      apiKeys: [readEnv("OPENROUTER_API_KEY")],
+      timeout: 30000,
+      retries: 1,
+      cooldownMs: 3600000,
+      rotationStrategy: "last-working-first",
+      priority: 40,
+      fallbackProviders: ["gemini", "openaiCompatible"],
+      headers: {
+        "HTTP-Referer": "https://alya.local",
+        "X-Title": "Alya Bot",
+      },
+    },
+
+    openaiCompatible: {
+      enabled: false,
+      kind: "openaiCompatible",
+      name: "OpenAI Compatible",
+      baseURL: "https://api.exemplo.com/v1",
+      defaultModel: "modelo-exemplo",
+      allowedModels: [],
+      apiKeys: [readEnv("ALYA_OPENAI_COMPATIBLE_API_KEY")],
+      timeout: 30000,
+      retries: 1,
+      cooldownMs: 3600000,
+      rotationStrategy: "last-working-first",
+      priority: 50,
+      fallbackProviders: ["gemini"],
+    },
+  },
+
+  local: {
+    enabled: false,
+    kind: "local",
+    provider: "llama.cpp",
+    selectedModel: "qwen-2.5-0.5b",
+    autoDownloadModel: false,
+    autoInstallRuntime: false,
+    askBeforeDownload: true,
+    runtimePath: "",
+    threads: 4,
+    contextSize: 2048,
+    temperature: 0.7,
+    topP: 0.9,
+    topK: 40,
+    repeatPenalty: 1.1,
+    maxTokens: 512,
+    gpuLayers: 0,
+    timeout: 120000,
+  },
+};

@@ -1,14 +1,14 @@
 Alya AI Service
 
 Organização no projeto:
+- src/config.js: configuração principal da IA em JS, com comentários e exemplos.
 - src/services/ai/: código do serviço central de IA.
 - src/commands/owner/ai-*.js: comandos de gerenciamento da IA.
-- database/ai/: configuração, registry e estado persistente da IA.
+- database/ai/: registry e estado persistente da IA.
 - assets/ai/models/: modelos locais GGUF e arquivos grandes de runtime/modelo.
 
 Arquivos:
-- database/ai/config.example.jsonc: exemplo comentado.
-- database/ai/config.json: configuração real com API keys. Não commitar.
+- src/config.js: contém AI_CONFIG.
 - database/ai/provider-state.json: estado de rotação das keys. Não commitar.
 - database/ai/models-registry.json: registro de modelos locais.
 - assets/ai/models/: modelos GGUF locais. Não commitar.
@@ -34,15 +34,21 @@ await aiService.request({
 });
 
 API keys:
-Use env:VARIAVEL no config.json para ler do ambiente, por exemplo:
-"apiKeys": ["env:GEMINI_API_KEY"]
+Configure em src/config.js usando readEnv("NOME_DA_ENV") ou uma lista de strings.
+
+Exemplo recomendado:
+apiKeys: [readEnv("GEMINI_API_KEY")]
+
+Exemplo com rotação direta:
+apiKeys: ["key_1", "key_2", "key_3"]
 
 Segurança:
 O provider-state.json salva apenas hash das API keys, nunca a key pura.
 
-Comandos já migrados para aiService:
+Comandos migrados para aiService:
 - $gemini / $alya -> provider gemini
 - $deepseek / $deep-seek -> provider deepseek
 - $gpt / $gpt-5 / $gpt-5-mini -> provider openai
+- $suporte / $help / $ajuda -> provider openai
 
-Esses comandos dependem de database/ai/config.json com ai.enabled=true e provider ativo.
+Esses comandos dependem de AI_CONFIG em src/config.js com ai.enabled=true e provider ativo.
