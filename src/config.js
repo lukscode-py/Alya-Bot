@@ -101,5 +101,3 @@ export const ONLY_GROUP_ID = "";
 // caso queira ver os logs de mensagens recebidas
 export const DEVELOPER_MODE = false;
 
-// Chave da OpenAI para o comando de suporte.
-export const OPENAI_API_KEY = readEnv("OPENAI_API_KEY");
