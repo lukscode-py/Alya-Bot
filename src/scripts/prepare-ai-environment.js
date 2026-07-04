@@ -1,4 +1,5 @@
 import { aiService } from "../services/ai/index.js";
+import { getLocalRuntimeManualInstructions } from "../services/ai/local-instructions.js";
 import { errorLog, infoLog, successLog, warningLog } from "../utils/logger.js";
 
 function enableLocalProviderForPreparation() {
@@ -23,6 +24,13 @@ function enableLocalProviderForPreparation() {
   };
 }
 
+function shouldPrintRuntimeInstructions(result) {
+  return [
+    "runtime-not-prepared",
+    "runtime-install-failed",
+  ].includes(result?.reason);
+}
+
 function printLocalPreparationHelp(result) {
   if (result?.ok) {
     successLog("[AI LOCAL] Ambiente local preparado com sucesso.");
@@ -32,6 +40,14 @@ function printLocalPreparationHelp(result) {
 
   warningLog("[AI LOCAL] O preparo local não foi concluído.");
   warningLog(`[AI LOCAL] Motivo: ${result?.reason || "desconhecido"}`);
+
+  if (shouldPrintRuntimeInstructions(result)) {
+    console.log("");
+    console.log(getLocalRuntimeManualInstructions());
+    console.log("");
+    return;
+  }
+
   warningLog(
     "[AI LOCAL] Corrija o problema acima ou configure local.runtimePath/modelo em src/config.js.",
   );
@@ -57,5 +73,8 @@ async function main() {
 main().catch((error) => {
   errorLog(`[AI LOCAL] Falha crítica no preparo: ${error.message}`);
   errorLog(error.stack);
+  console.log("");
+  console.log(getLocalRuntimeManualInstructions());
+  console.log("");
   process.exitCode = 1;
 });

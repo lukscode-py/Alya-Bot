@@ -269,7 +269,7 @@ export async function installLocalRuntime({ providerConfig = {}, onLog = null } 
   if (!installCommands.length) {
     throw createAiError(
       AI_ERROR_CODES.AI_LOCAL_RUNTIME_NOT_FOUND,
-      `Não encontrei instalador pré-compilado disponível. ${environment.installHint}`,
+      `Não encontrei instalador automático disponível. Use as instruções do prepare-ai-ambiente.sh para baixar um binário compilado do llama.cpp Releases ou configure local.runtimePath em src/config.js. ${environment.installHint}`,
       { provider: "local" },
     );
   }
@@ -309,7 +309,7 @@ export async function installLocalRuntime({ providerConfig = {}, onLog = null } 
 
   throw createAiError(
     AI_ERROR_CODES.AI_LOCAL_RUNTIME_NOT_FOUND,
-    `Não consegui instalar/validar runtime local sem compilação. ${environment.installHint}\n${errors.join("\n")}`,
+    `Não consegui instalar/validar runtime local automaticamente. Use as instruções do prepare-ai-ambiente.sh para baixar o binário compilado do llama.cpp Releases ou configure local.runtimePath em src/config.js. ${environment.installHint}\n${errors.join("\n")}`,
     { provider: "local" },
   );
 }
