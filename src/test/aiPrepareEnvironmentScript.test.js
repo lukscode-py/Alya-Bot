@@ -16,6 +16,7 @@ describe("AI environment preparation script", () => {
     assert.match(nodeSource, /interactive:\s*false/);
     assert.match(nodeSource, /autoInstallRuntime:\s*true/);
     assert.match(nodeSource, /autoDownloadModel:\s*true/);
+    assert.match(nodeSource, /autoStartServer:\s*true/);
     assert.doesNotMatch(nodeSource, /connect\(/);
   });
 

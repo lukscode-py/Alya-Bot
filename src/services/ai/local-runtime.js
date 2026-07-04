@@ -1,23 +1,18 @@
 import axios from "axios";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { stdin as input, stdout as output } from "node:process";
 import { createInterface } from "node:readline/promises";
-import { pipeline } from "node:stream/promises";
 import { promisify } from "node:util";
 import { AI_ERROR_CODES, createAiError } from "./errors.js";
 
 const execFileAsync = promisify(execFile);
 
-const RUNTIME_CANDIDATES = [
-  "llama-cli",
-  "llama-cli.exe",
-  "llama",
-  "llama.exe",
-  "main",
-  "main.exe",
+const OLLAMA_CANDIDATES = [
+  "ollama",
+  "ollama.exe",
 ];
 
 function isTermux() {
@@ -54,84 +49,12 @@ function commandExists(command) {
   return Boolean(findExecutable(command));
 }
 
-async function canExecuteRuntime(runtimePath) {
-  if (!runtimePath) {
-    return false;
-  }
-
-  try {
-    await execFileAsync(runtimePath, ["--help"], {
-      timeout: 15000,
-      maxBuffer: 1024 * 1024 * 2,
-    });
-
-    return true;
-  } catch (error) {
-    // Alguns builds imprimem help em stderr e retornam 0/1 dependendo da versão.
-    const outputText = `${error.stdout || ""}\n${error.stderr || ""}\n${error.message || ""}`;
-
-    return /llama|usage|model|prompt|gguf/i.test(outputText);
-  }
+function normalizeBaseUrl(baseUrl = "") {
+  return String(baseUrl || "http://127.0.0.1:11434").replace(/\/+$/, "");
 }
 
-function getInstallCommands(environment) {
-  if (environment.type === "termux") {
-    return [
-      {
-        title: "Instalar llama.cpp pelo pacote pré-compilado do Termux",
-        command: "pkg",
-        args: ["install", "-y", "llama-cpp"],
-      },
-    ];
-  }
-
-  if (process.platform === "win32") {
-    return [
-      {
-        title: "Instalar llama.cpp pelo winget",
-        command: "winget",
-        args: ["install", "llama.cpp"],
-      },
-      {
-        title: "Instalar llama.cpp pelo conda-forge",
-        command: "conda",
-        args: ["install", "-y", "-c", "conda-forge", "llama-cpp"],
-      },
-      {
-        title: "Instalar llama.cpp pelo mamba/conda-forge",
-        command: "mamba",
-        args: ["install", "-y", "-c", "conda-forge", "llama-cpp"],
-      },
-    ];
-  }
-
-  return [
-    {
-      title: "Instalar llama.cpp pelo Homebrew",
-      command: "brew",
-      args: ["install", "llama.cpp"],
-    },
-    {
-      title: "Instalar llama.cpp pelo Nix profile",
-      command: "nix",
-      args: ["profile", "install", "nixpkgs#llama-cpp"],
-    },
-    {
-      title: "Instalar llama.cpp pelo conda-forge",
-      command: "conda",
-      args: ["install", "-y", "-c", "conda-forge", "llama-cpp"],
-    },
-    {
-      title: "Instalar llama.cpp pelo mamba/conda-forge",
-      command: "mamba",
-      args: ["install", "-y", "-c", "conda-forge", "llama-cpp"],
-    },
-    {
-      title: "Instalar llama.cpp pelo pixi global",
-      command: "pixi",
-      args: ["global", "install", "llama-cpp"],
-    },
-  ];
+async function sleep(ms) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function detectLocalEnvironment() {
@@ -141,54 +64,46 @@ export function detectLocalEnvironment() {
     return {
       type: "termux",
       packageManager: "pkg",
-      installHint: "pkg update && pkg install -y llama-cpp",
+      installHint: "pkg update -y && pkg upgrade -y && pkg install tur-repo -y && pkg install ollama -y",
     };
   }
 
   if (platform === "win32") {
     return {
       type: "windows",
-      packageManager: commandExists("winget") ? "winget" : "manual",
-      installHint: "winget install llama.cpp ou conda install -y -c conda-forge llama-cpp",
+      packageManager: "powershell",
+      installHint: "irm https://ollama.com/install.ps1 | iex",
     };
   }
 
   if (platform === "darwin") {
     return {
       type: "macos",
-      packageManager: commandExists("brew") ? "brew" : commandExists("nix") ? "nix" : "manual",
-      installHint: "brew install llama.cpp ou nix profile install nixpkgs#llama-cpp",
+      packageManager: "manual",
+      installHint: "Instale pelo site oficial do Ollama ou use o gerenciador de pacotes disponível no sistema.",
     };
   }
 
   if (platform === "linux") {
     return {
       type: "linux",
-      packageManager: commandExists("brew")
-        ? "brew"
-        : commandExists("nix")
-          ? "nix"
-          : commandExists("conda")
-            ? "conda"
-            : "manual",
-      installHint:
-        "Use pacote pré-compilado: brew install llama.cpp, nix profile install nixpkgs#llama-cpp ou conda install -y -c conda-forge llama-cpp.",
+      packageManager: "shell",
+      installHint: "curl -fsSL https://ollama.com/install.sh | sh",
     };
   }
 
   return {
     type: "unknown",
-    packageManager: "unknown",
-    installHint:
-      "Ambiente não reconhecido. Instale um binário pré-compilado do llama.cpp e configure local.runtimePath em src/config.js.",
+    packageManager: "manual",
+    installHint: "Instale o Ollama manualmente e confirme que o comando ollama está no PATH.",
   };
 }
 
 export async function getLocalRuntimeStatus(providerConfig = {}) {
   const configuredRuntime = String(providerConfig.runtimePath || "").trim();
   const candidates = configuredRuntime
-    ? [configuredRuntime, ...RUNTIME_CANDIDATES]
-    : RUNTIME_CANDIDATES;
+    ? [configuredRuntime, ...OLLAMA_CANDIDATES]
+    : OLLAMA_CANDIDATES;
 
   for (const candidate of candidates) {
     const runtimePath = findExecutable(candidate);
@@ -197,15 +112,31 @@ export async function getLocalRuntimeStatus(providerConfig = {}) {
       continue;
     }
 
-    const executable = await canExecuteRuntime(runtimePath);
+    try {
+      const { stdout, stderr } = await execFileAsync(runtimePath, ["--version"], {
+        timeout: 15000,
+        maxBuffer: 1024 * 1024 * 2,
+      });
 
-    if (executable) {
       return {
         ready: true,
         runtimePath,
         source: configuredRuntime && runtimePath === configuredRuntime ? "config" : "path",
+        version: `${stdout || stderr}`.trim(),
         candidates,
       };
+    } catch (error) {
+      const outputText = `${error.stdout || ""}\n${error.stderr || ""}\n${error.message || ""}`;
+
+      if (/ollama/i.test(outputText)) {
+        return {
+          ready: true,
+          runtimePath,
+          source: configuredRuntime && runtimePath === configuredRuntime ? "config" : "path",
+          version: outputText.trim(),
+          candidates,
+        };
+      }
     }
   }
 
@@ -213,6 +144,7 @@ export async function getLocalRuntimeStatus(providerConfig = {}) {
     ready: false,
     runtimePath: "",
     source: "",
+    version: "",
     candidates,
   };
 }
@@ -257,78 +189,342 @@ export async function installLocalRuntime({ providerConfig = {}, onLog = null } 
       ok: true,
       skipped: true,
       runtimePath: currentStatus.runtimePath,
-      message: "Runtime local já estava instalado e validado.",
+      message: "Ollama já estava instalado e validado.",
     };
   }
 
   const environment = detectLocalEnvironment();
-  const installCommands = getInstallCommands(environment).filter((item) =>
-    commandExists(item.command),
-  );
 
-  if (!installCommands.length) {
+  if (environment.type === "termux") {
+    const commands = [
+      ["pkg", ["update", "-y"]],
+      ["pkg", ["upgrade", "-y"]],
+      ["pkg", ["install", "tur-repo", "-y"]],
+      ["pkg", ["install", "ollama", "-y"]],
+    ];
+
+    for (const [command, args] of commands) {
+      if (onLog) {
+        onLog(`[AI LOCAL] Executando: ${command} ${args.join(" ")}`);
+      }
+
+      await execFileAsync(command, args, {
+        timeout: 1000 * 60 * 20,
+        maxBuffer: 1024 * 1024 * 16,
+      });
+    }
+  } else if (environment.type === "linux") {
+    if (onLog) {
+      onLog("[AI LOCAL] Executando instalador oficial do Ollama para Linux.");
+    }
+
+    await execFileAsync("sh", ["-c", "curl -fsSL https://ollama.com/install.sh | sh"], {
+      timeout: 1000 * 60 * 20,
+      maxBuffer: 1024 * 1024 * 16,
+    });
+  } else if (environment.type === "windows") {
     throw createAiError(
       AI_ERROR_CODES.AI_LOCAL_RUNTIME_NOT_FOUND,
-      `Não encontrei instalador automático disponível. Use as instruções do prepare-ai-ambiente.sh para baixar um binário compilado do llama.cpp Releases ou configure local.runtimePath em src/config.js. ${environment.installHint}`,
+      "No Windows, instale o Ollama pelo PowerShell como Administrador: irm https://ollama.com/install.ps1 | iex",
+      { provider: "local" },
+    );
+  } else {
+    throw createAiError(
+      AI_ERROR_CODES.AI_LOCAL_RUNTIME_NOT_FOUND,
+      `Instalação automática do Ollama não suportada neste ambiente. ${environment.installHint}`,
       { provider: "local" },
     );
   }
 
-  const errors = [];
+  const nextStatus = await getLocalRuntimeStatus(providerConfig);
 
-  for (const installCommand of installCommands) {
-    const commandText = `${installCommand.command} ${installCommand.args.join(" ")}`;
+  if (nextStatus.ready) {
+    return {
+      ok: true,
+      skipped: false,
+      runtimePath: nextStatus.runtimePath,
+      message: "Ollama instalado e validado.",
+    };
+  }
 
-    if (onLog) {
-      onLog(`[AI LOCAL] Executando: ${commandText}`);
-    }
+  throw createAiError(
+    AI_ERROR_CODES.AI_LOCAL_RUNTIME_NOT_FOUND,
+    `O Ollama foi instalado, mas o comando não ficou executável. ${environment.installHint}`,
+    { provider: "local" },
+  );
+}
 
-    try {
-      await execFileAsync(installCommand.command, installCommand.args, {
-        timeout: 1000 * 60 * 20,
-        maxBuffer: 1024 * 1024 * 16,
-      });
+async function requestOllama(pathname, providerConfig = {}, options = {}) {
+  const baseUrl = normalizeBaseUrl(providerConfig.baseUrl);
+  return axios({
+    url: `${baseUrl}${pathname}`,
+    method: options.method || "GET",
+    data: options.data,
+    timeout: options.timeout || providerConfig.healthTimeout || 15000,
+    validateStatus: () => true,
+  });
+}
 
-      const nextStatus = await getLocalRuntimeStatus(providerConfig);
+export async function getOllamaServerStatus(providerConfig = {}) {
+  try {
+    const response = await requestOllama("/api/tags", providerConfig);
 
-      if (nextStatus.ready) {
-        return {
-          ok: true,
-          skipped: false,
-          runtimePath: nextStatus.runtimePath,
-          command: commandText,
-          message: installCommand.title,
-        };
-      }
+    return {
+      ready: response.status >= 200 && response.status < 300,
+      status: response.status,
+      baseUrl: normalizeBaseUrl(providerConfig.baseUrl),
+      models: Array.isArray(response.data?.models) ? response.data.models : [],
+    };
+  } catch (error) {
+    return {
+      ready: false,
+      status: 0,
+      baseUrl: normalizeBaseUrl(providerConfig.baseUrl),
+      models: [],
+      error: error.message,
+    };
+  }
+}
 
-      errors.push(`${commandText}: terminou, mas llama-cli não ficou executável`);
-    } catch (error) {
-      errors.push(`${commandText}: ${error.message}`);
+export async function startOllamaServer({ providerConfig = {}, onLog = null } = {}) {
+  const runtimeStatus = await getLocalRuntimeStatus(providerConfig);
+
+  if (!runtimeStatus.ready) {
+    throw createAiError(
+      AI_ERROR_CODES.AI_LOCAL_RUNTIME_NOT_FOUND,
+      "Ollama não encontrado. Instale o Ollama antes de iniciar o servidor local.",
+      { provider: "local" },
+    );
+  }
+
+  const currentServer = await getOllamaServerStatus(providerConfig);
+
+  if (currentServer.ready) {
+    return {
+      ok: true,
+      skipped: true,
+      runtimePath: runtimeStatus.runtimePath,
+      baseUrl: currentServer.baseUrl,
+      message: "Servidor Ollama já estava rodando.",
+    };
+  }
+
+  const logFile = providerConfig.logFile || path.join(os.tmpdir(), "alya-ollama.log");
+  const out = fs.openSync(logFile, "a");
+  const child = spawn(runtimeStatus.runtimePath, ["serve"], {
+    detached: true,
+    stdio: ["ignore", out, out],
+    env: {
+      ...process.env,
+      OLLAMA_HOST: providerConfig.host || "127.0.0.1:11434",
+    },
+  });
+
+  child.unref();
+
+  if (onLog) {
+    onLog(`[AI LOCAL] Ollama iniciado pelo bot com ollama serve. pid=${child.pid} log=${logFile}`);
+  }
+
+  const attempts = Number(providerConfig.serverStartAttempts || 20);
+  const delayMs = Number(providerConfig.serverStartDelayMs || 1000);
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    await sleep(delayMs);
+
+    const serverStatus = await getOllamaServerStatus(providerConfig);
+
+    if (serverStatus.ready) {
+      return {
+        ok: true,
+        skipped: false,
+        runtimePath: runtimeStatus.runtimePath,
+        baseUrl: serverStatus.baseUrl,
+        pid: child.pid,
+        logFile,
+        message: "Servidor Ollama iniciado.",
+      };
     }
   }
 
   throw createAiError(
     AI_ERROR_CODES.AI_LOCAL_RUNTIME_NOT_FOUND,
-    `Não consegui instalar/validar runtime local automaticamente. Use as instruções do prepare-ai-ambiente.sh para baixar o binário compilado do llama.cpp Releases ou configure local.runtimePath em src/config.js. ${environment.installHint}\n${errors.join("\n")}`,
+    `Ollama foi iniciado, mas a API local não respondeu em ${normalizeBaseUrl(providerConfig.baseUrl)}.`,
     { provider: "local" },
   );
 }
 
-export function getLocalModelPath(paths, modelInfo) {
-  return path.join(paths.llamaModelsDir, modelInfo.family, modelInfo.file);
+export async function ensureOllamaServer({ providerConfig = {}, onLog = null } = {}) {
+  const serverStatus = await getOllamaServerStatus(providerConfig);
+
+  if (serverStatus.ready) {
+    return {
+      ok: true,
+      skipped: true,
+      baseUrl: serverStatus.baseUrl,
+      models: serverStatus.models,
+    };
+  }
+
+  if (providerConfig.autoStartServer === false) {
+    throw createAiError(
+      AI_ERROR_CODES.AI_LOCAL_RUNTIME_NOT_FOUND,
+      `Servidor Ollama não está rodando em ${serverStatus.baseUrl}.`,
+      { provider: "local" },
+    );
+  }
+
+  return startOllamaServer({
+    providerConfig,
+    onLog,
+  });
+}
+
+function normalizeModelName(modelInfoOrId) {
+  if (typeof modelInfoOrId === "string") {
+    return modelInfoOrId;
+  }
+
+  return modelInfoOrId?.ollamaModel || modelInfoOrId?.id || "";
+}
+
+export function isOllamaModelInstalled(models = [], modelName = "") {
+  return models.some((model) => {
+    const name = model?.name || model?.model || "";
+    return name === modelName || name === `${modelName}:latest`;
+  });
+}
+
+export async function ensureOllamaModel({ providerConfig = {}, model, onLog = null } = {}) {
+  const modelName = normalizeModelName(model);
+
+  if (!modelName) {
+    throw createAiError(
+      AI_ERROR_CODES.AI_MODEL_NOT_FOUND,
+      "Modelo Ollama não informado.",
+      { provider: "local" },
+    );
+  }
+
+  await ensureOllamaServer({
+    providerConfig,
+    onLog,
+  });
+
+  const tags = await getOllamaServerStatus(providerConfig);
+
+  if (isOllamaModelInstalled(tags.models, modelName)) {
+    return {
+      ok: true,
+      skipped: true,
+      model: modelName,
+      message: "Modelo Ollama já instalado.",
+    };
+  }
+
+  if (providerConfig.autoDownloadModel === false) {
+    throw createAiError(
+      AI_ERROR_CODES.AI_MODEL_NOT_INSTALLED,
+      `Modelo Ollama ${modelName} não instalado. Use o CLI ou ative autoDownloadModel.`,
+      { provider: "local", model: modelName },
+    );
+  }
+
+  if (onLog) {
+    onLog(`[AI LOCAL] Baixando modelo Ollama: ${modelName}`);
+  }
+
+  const response = await requestOllama("/api/pull", providerConfig, {
+    method: "POST",
+    timeout: providerConfig.pullTimeout || 1000 * 60 * 30,
+    data: {
+      name: modelName,
+      stream: false,
+    },
+  });
+
+  if (response.status < 200 || response.status >= 300) {
+    throw createAiError(
+      AI_ERROR_CODES.AI_LOCAL_MODEL_DOWNLOAD_FAILED,
+      response.data?.error || `Falha ao baixar modelo Ollama ${modelName}.`,
+      { provider: "local", model: modelName },
+    );
+  }
+
+  return {
+    ok: true,
+    skipped: false,
+    model: modelName,
+    message: "Modelo Ollama baixado.",
+  };
+}
+
+export async function deleteOllamaModel({ providerConfig = {}, model } = {}) {
+  const modelName = normalizeModelName(model);
+
+  if (!modelName) {
+    throw createAiError(
+      AI_ERROR_CODES.AI_MODEL_NOT_FOUND,
+      "Modelo Ollama não informado para remoção.",
+      { provider: "local" },
+    );
+  }
+
+  await ensureOllamaServer({
+    providerConfig,
+  });
+
+  const response = await requestOllama("/api/delete", providerConfig, {
+    method: "DELETE",
+    data: {
+      name: modelName,
+    },
+  });
+
+  if (response.status < 200 || response.status >= 300) {
+    throw createAiError(
+      AI_ERROR_CODES.AI_LOCAL_MODEL_DOWNLOAD_FAILED,
+      response.data?.error || `Falha ao apagar modelo Ollama ${modelName}.`,
+      { provider: "local", model: modelName },
+    );
+  }
+
+  return {
+    ok: true,
+    model: modelName,
+    message: "Modelo Ollama removido.",
+  };
+}
+
+export async function listOllamaModels({ providerConfig = {} } = {}) {
+  await ensureOllamaServer({
+    providerConfig,
+  });
+
+  const status = await getOllamaServerStatus(providerConfig);
+
+  return {
+    ok: true,
+    baseUrl: status.baseUrl,
+    models: status.models,
+  };
+}
+
+export function getLocalModelPath(_paths, modelInfo) {
+  return normalizeModelName(modelInfo);
 }
 
 export function hasEnoughDiskSpaceHint(modelInfo) {
   return {
     ok: true,
     message:
-      "Verificação real de espaço em disco ainda não foi aplicada. Confira espaço disponível antes de baixar modelos grandes.",
-    model: modelInfo?.id,
+      "Com Ollama, o download e armazenamento do modelo são gerenciados pelo próprio Ollama.",
+    model: normalizeModelName(modelInfo),
     freeMemoryHint: os.freemem(),
   };
 }
 
-export async function downloadLocalModel({ paths, modelInfo, force = false, onLog = null }) {
+export async function downloadLocalModel({ modelInfo, onLog = null }) {
   if (!modelInfo) {
     throw createAiError(
       AI_ERROR_CODES.AI_MODEL_NOT_FOUND,
@@ -336,68 +532,13 @@ export async function downloadLocalModel({ paths, modelInfo, force = false, onLo
     );
   }
 
-  if (!modelInfo.downloadUrl) {
-    throw createAiError(
-      AI_ERROR_CODES.AI_LOCAL_MODEL_DOWNLOAD_FAILED,
-      `O modelo ${modelInfo.id} não possui downloadUrl verificado. Baixe manualmente e coloque em assets/ai/models/llama.cpp/${modelInfo.family}/${modelInfo.file}.`,
-      { provider: "local", model: modelInfo.id },
-    );
-  }
-
-  const outputPath = getLocalModelPath(paths, modelInfo);
-
-  if (fs.existsSync(outputPath) && !force) {
-    return {
-      ok: true,
-      skipped: true,
-      model: modelInfo.id,
-      path: outputPath,
-      message: "Modelo já existe no disco.",
-    };
-  }
-
-  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-
-  if (onLog) {
-    onLog(`[AI LOCAL] Baixando modelo ${modelInfo.id}...`);
-    onLog(`[AI LOCAL] URL: ${modelInfo.downloadUrl}`);
-    onLog(`[AI LOCAL] Destino: ${outputPath}`);
-  }
-
-  const response = await axios.get(modelInfo.downloadUrl, {
-    responseType: "stream",
-    timeout: 120000,
+  return ensureOllamaModel({
+    providerConfig: {
+      baseUrl: "http://127.0.0.1:11434",
+      autoStartServer: true,
+      autoDownloadModel: true,
+    },
+    model: modelInfo.ollamaModel || modelInfo.id,
+    onLog,
   });
-
-  const contentType = response.headers?.["content-type"] || "";
-
-  if (/text\/html/i.test(contentType)) {
-    throw createAiError(
-      AI_ERROR_CODES.AI_LOCAL_MODEL_DOWNLOAD_FAILED,
-      "O link retornou HTML em vez de arquivo de modelo. Use um link direto real.",
-      { provider: "local", model: modelInfo.id },
-    );
-  }
-
-  await pipeline(response.data, fs.createWriteStream(outputPath));
-
-  const stat = fs.statSync(outputPath);
-
-  if (stat.size < 1024 * 1024) {
-    fs.rmSync(outputPath, { force: true });
-
-    throw createAiError(
-      AI_ERROR_CODES.AI_LOCAL_MODEL_DOWNLOAD_FAILED,
-      "Arquivo baixado é pequeno demais para ser um modelo GGUF válido.",
-      { provider: "local", model: modelInfo.id },
-    );
-  }
-
-  return {
-    ok: true,
-    skipped: false,
-    model: modelInfo.id,
-    path: outputPath,
-    sizeBytes: stat.size,
-  };
 }

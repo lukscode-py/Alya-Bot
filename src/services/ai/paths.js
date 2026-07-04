@@ -9,6 +9,6 @@ export function buildAiPaths(rootDir) {
     statePath: path.join(baseDir, "provider-state.json"),
     modelsRegistryPath: path.join(baseDir, "models-registry.json"),
     modelsDir,
-    llamaModelsDir: path.join(modelsDir, "llama.cpp"),
+    localModelsDir: modelsDir,
   };
 }

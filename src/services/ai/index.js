@@ -8,20 +8,23 @@ import {
   askYesNo,
   detectLocalEnvironment,
   downloadLocalModel,
+  ensureOllamaModel,
+  ensureOllamaServer,
+  getOllamaServerStatus,
   getLocalModelPath,
   getLocalRuntimeStatus,
   installLocalRuntime,
 } from "./local-runtime.js";
 import { buildAiPaths } from "./paths.js";
 import { requestGemini } from "./providers/gemini.js";
-import { requestLocalLlama } from "./providers/local-llama.js";
+import { requestLocalOllama } from "./providers/local-ollama.js";
 import { requestOpenAiCompatible } from "./providers/openai-compatible.js";
 import { AiProviderState } from "./state.js";
 
 const DEFAULT_ADAPTERS = {
   gemini: requestGemini,
   openaiCompatible: requestOpenAiCompatible,
-  local: requestLocalLlama,
+  local: requestLocalOllama,
 };
 
 function unique(values) {
@@ -131,7 +134,7 @@ export class AiService {
       const environment = detectLocalEnvironment();
 
       warningLog(
-        `[AI LOCAL] Runtime llama.cpp não encontrado/validado. Ambiente=${environment.type}.`,
+        `[AI LOCAL] Runtime Ollama não encontrado/validado. Ambiente=${environment.type}.`,
       );
 
       const shouldPrepare =
@@ -173,7 +176,7 @@ export class AiService {
         };
       }
     } else {
-      infoLog(`[AI LOCAL] Runtime validado: ${runtimeStatus.runtimePath}`);
+      infoLog(`[AI LOCAL] Runtime Ollama validado: ${runtimeStatus.runtimePath}`);
     }
 
     const modelInfo = this.getSelectedLocalModelInfo();
@@ -189,12 +192,32 @@ export class AiService {
       };
     }
 
-    const modelPath = getLocalModelPath(this.paths, modelInfo);
+    const modelName = getLocalModelPath(this.paths, modelInfo);
 
     infoLog(`[AI LOCAL] Modelo selecionado: ${modelInfo.id}`);
-    infoLog(`[AI LOCAL] Caminho esperado do modelo: ${modelPath}`);
+    infoLog(`[AI LOCAL] Modelo Ollama: ${modelName}`);
 
-    if (!fs.existsSync(modelPath)) {
+    try {
+      await ensureOllamaServer({
+        providerConfig: this.config.local,
+        onLog: infoLog,
+      });
+    } catch (error) {
+      this.disableLocalProvider(error.message || "Falha ao iniciar servidor Ollama.");
+      return {
+        ok: false,
+        disabled: true,
+        reason: "ollama-server-failed",
+      };
+    }
+
+    const serverStatus = await getOllamaServerStatus(this.config.local);
+    const hasModel = serverStatus.models.some((item) => {
+      const name = item?.name || item?.model || "";
+      return name === modelName || name === `${modelName}:latest`;
+    });
+
+    if (!hasModel) {
       warningLog(`[AI LOCAL] Modelo ${modelInfo.id} não instalado.`);
 
       const diskHint = `${modelInfo.sizeMb ? `Tamanho aproximado: ${modelInfo.sizeMb} MB.` : ""}`;
@@ -203,7 +226,7 @@ export class AiService {
         (await askYesNo(
           [
             `O provedor local está ativado, mas o modelo ${modelInfo.id} não está instalado.`,
-            `Caminho esperado: ${modelPath}`,
+            `Modelo Ollama: ${modelName}`,
             diskHint,
             "Deseja instalar o modelo agora? Se cancelar, o provedor local será desativado automaticamente. (s/n) >",
           ]
@@ -222,14 +245,13 @@ export class AiService {
       }
 
       try {
-        const downloadResult = await downloadLocalModel({
-          paths: this.paths,
-          modelInfo,
-          force: false,
+        const downloadResult = await ensureOllamaModel({
+          providerConfig: this.config.local,
+          model: modelName,
           onLog: infoLog,
         });
 
-        infoLog(`[AI LOCAL] Modelo pronto em ${downloadResult.path}`);
+        infoLog(`[AI LOCAL] Modelo pronto: ${downloadResult.model}`);
       } catch (error) {
         this.disableLocalProvider(error.message || "Falha ao instalar modelo local.");
         return {
@@ -239,7 +261,7 @@ export class AiService {
         };
       }
     } else {
-      infoLog(`[AI LOCAL] Modelo já instalado: ${modelPath}`);
+      infoLog(`[AI LOCAL] Modelo já instalado no Ollama: ${modelName}`);
     }
 
     return {
@@ -301,7 +323,7 @@ export class AiService {
       return {
         ...this.config.local,
         kind: "local",
-        name: "llama.cpp",
+        name: "Ollama",
       };
     }
 
@@ -594,17 +616,17 @@ export class AiService {
     const local = this.config.local;
     const selectedModel = local?.selectedModel;
     const modelInfo = this.registry.find((item) => item.id === selectedModel);
-    const modelPath = modelInfo
-      ? `${this.paths.llamaModelsDir}/${modelInfo.family}/${modelInfo.file}`
-      : null;
+    const modelName = modelInfo ? getLocalModelPath(this.paths, modelInfo) : selectedModel;
 
     return {
       enabled: Boolean(local?.enabled),
-      provider: local?.provider || "llama.cpp",
+      provider: local?.provider || "ollama",
       selectedModel,
       modelFoundInRegistry: Boolean(modelInfo),
-      modelInstalled: Boolean(modelPath && fs.existsSync(modelPath)),
-      modelPath,
+      modelInstalled: false,
+      modelPath: modelName,
+      baseUrl: local?.baseUrl || "http://127.0.0.1:11434",
+      autoStartServer: local?.autoStartServer !== false,
       environment: detectLocalEnvironment(),
     };
   }
@@ -658,7 +680,7 @@ export class AiService {
       ok: true,
       environment: detectLocalEnvironment(),
       message:
-        "Instalação automática destrutiva não é executada sem comando explícito. Use o installHint retornado para instalar o llama.cpp.",
+        "Use node src/scripts/ai-local.js install para instalar o Ollama, ou node src/scripts/ai-local.js serve para iniciar o servidor.",
     };
   }
 }

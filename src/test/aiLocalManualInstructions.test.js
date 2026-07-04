@@ -7,16 +7,15 @@ const prepareScriptSource = fs.readFileSync("src/scripts/prepare-ai-environment.
 const runtimeSource = fs.readFileSync("src/services/ai/local-runtime.js", "utf8");
 
 describe("Local AI manual runtime instructions", () => {
-  it("instructs Termux users to install llama.cpp with pkg", () => {
+  it("instructs Termux users to install Ollama with pkg", () => {
     assert.match(instructionsSource, /pkg update/);
-    assert.match(instructionsSource, /pkg install -y llama-cpp/);
+    assert.match(instructionsSource, /pkg install ollama -y/);
   });
 
-  it("instructs desktop users to download compiled releases", () => {
-    assert.match(instructionsSource, /github\.com\/ggml-org\/llama\.cpp\/releases/);
-    assert.match(instructionsSource, /Ubuntu x64 \(CPU\)/);
-    assert.match(instructionsSource, /Windows x64 \(CPU\)/);
-    assert.match(instructionsSource, /runtimePath/);
+  it("instructs desktop users to install Ollama", () => {
+    assert.match(instructionsSource, /ollama\.com\/install\.sh/);
+    assert.match(instructionsSource, /install\.ps1/);
+    assert.match(instructionsSource, /ollama --version/);
   });
 
   it("prepare script prints instructions when runtime preparation fails", () => {
@@ -25,8 +24,8 @@ describe("Local AI manual runtime instructions", () => {
     assert.match(prepareScriptSource, /runtime-not-prepared/);
   });
 
-  it("runtime errors point user back to manual instructions instead of pretending setup worked", () => {
-    assert.match(runtimeSource, /baixar um binário compilado/);
-    assert.match(runtimeSource, /local\.runtimePath/);
+  it("runtime errors point user back to Ollama instructions instead of pretending setup worked", () => {
+    assert.match(runtimeSource, /Ollama não encontrado/);
+    assert.match(runtimeSource, /installHint/);
   });
 });

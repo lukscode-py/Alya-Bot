@@ -4,7 +4,7 @@ import { requestAiText } from "../../../services/ai/command-utils.js";
 
 export default {
   name: "gpt-local",
-  description: "Use a inteligência artificial local configurada com llama.cpp.",
+  description: "Use a inteligência artificial local configurada com Ollama.",
   commands: ["gptlocal", "gpt-local", "localgpt"],
   usage: `${PREFIX}gptlocal explique promises em JavaScript`,
   /**

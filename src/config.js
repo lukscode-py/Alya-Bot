@@ -106,9 +106,6 @@ export const DEVELOPER_MODE = false;
 // CONFIGURAÇÃO CENTRAL DE INTELIGÊNCIA ARTIFICIAL
 // =====================================================
 //
-// Toda configuração da IA fica aqui para seguir o padrão do bot.
-// Não crie config separada em JSON para IA.
-//
 // Dicas:
 // - enabled: true ativa o serviço central de IA.
 // - activeProviders define quais provedores podem ser usados.
@@ -118,7 +115,7 @@ export const DEVELOPER_MODE = false;
 // - Use readEnv("NOME_DA_ENV") para não colocar key direto no código.
 // - Se quiser key direta, coloque string normal dentro do array apiKeys.
 // - provider-state fica em database/ai/provider-state.json e salva apenas hashes.
-// - modelos locais GGUF ficam em assets/ai/models/.
+// - IA local usa Ollama em http://127.0.0.1:11434.
 //
 // Exemplos de apiKeys:
 // apiKeys: [readEnv("GEMINI_API_KEY")]
@@ -126,7 +123,7 @@ export const DEVELOPER_MODE = false;
 //
 export const AI_CONFIG = {
   ai: {
-    enabled: false,
+    enabled: true,
 
     defaultProvider: "gemini",
 
@@ -150,14 +147,11 @@ export const AI_CONFIG = {
 
   providers: {
     gemini: {
-      enabled: false,
+      enabled: true,
       kind: "gemini",
       name: "Gemini",
-      defaultModel: "gemini-1.5-flash",
+      defaultModel: "gemini-3.1-flash-lite-preview",
       allowedModels: [
-        "gemini-1.5-flash",
-        "gemini-1.5-pro",
-        "gemini-2.0-flash",
       ],
       apiKeys: [readEnv("GEMINI_API_KEY")],
       timeout: 30000,
@@ -238,14 +232,26 @@ export const AI_CONFIG = {
   },
 
   local: {
-    enabled: false,
+    enabled: true,
     kind: "local",
-    provider: "llama.cpp",
-    selectedModel: "qwen-2.5-0.5b",
-    autoDownloadModel: false,
+    provider: "ollama",
+    selectedModel: "qwen2.5:0.5b",
+    baseUrl: "http://127.0.0.1:11434",
+    host: "127.0.0.1:11434",
+    // Se true, tenta instalar o Ollama automaticamente sem perguntar.
+    // Útil para ambientes sem terminal interativo, mas por padrão fica false.
     autoInstallRuntime: false,
+
+    // Se true, tenta baixar o modelo Ollama selecionado automaticamente sem perguntar.
+    // Útil para testes em terminal não interativo.
+    autoDownloadModel: false,
+
+    // Se true, quando possível, pergunta antes de baixar modelo.
     askBeforeDownload: true,
+    // Caminho opcional do executável ollama. Vazio usa o PATH.
     runtimePath: "",
+    // Se true, o bot inicia "ollama serve" quando a API local não estiver ativa.
+    autoStartServer: true,
     threads: 4,
     contextSize: 2048,
     temperature: 0.7,

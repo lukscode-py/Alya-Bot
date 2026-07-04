@@ -18,8 +18,10 @@ function enableLocalProviderForPreparation() {
   aiService.config.local = {
     ...(aiService.config.local || {}),
     enabled: true,
+    provider: "ollama",
     autoInstallRuntime: true,
     autoDownloadModel: true,
+    autoStartServer: true,
     askBeforeDownload: false,
   };
 }

@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 
 const serviceSource = fs.readFileSync("src/services/ai/index.js", "utf8");
 const runtimeSource = fs.readFileSync("src/services/ai/local-runtime.js", "utf8");
-const providerSource = fs.readFileSync("src/services/ai/providers/local-llama.js", "utf8");
+const providerSource = fs.readFileSync("src/services/ai/providers/local-ollama.js", "utf8");
 const registrySource = fs.readFileSync("database/ai/models-registry.json", "utf8");
 
 describe("Local AI startup preparation", () => {
@@ -17,16 +17,16 @@ describe("Local AI startup preparation", () => {
 
   it("local runtime supports no-compile installers and resolved runtime path", () => {
     assert.match(runtimeSource, /installLocalRuntime/);
-    assert.match(runtimeSource, /llama-cpp/);
-    assert.match(runtimeSource, /winget/);
-    assert.match(runtimeSource, /conda-forge/);
+    assert.match(runtimeSource, /ollama/);
+    assert.match(runtimeSource, /tur-repo/);
+    assert.match(runtimeSource, /install\.sh/);
     assert.match(runtimeSource, /getLocalRuntimeStatus/);
-    assert.match(providerSource, /getLocalRuntimeStatus/);
+    assert.match(providerSource, /ensureOllamaServer/);
   });
 
-  it("registry includes the default qwen local test model", () => {
-    assert.match(registrySource, /qwen-2\.5-0\.5b/);
-    assert.match(registrySource, /qwen2\.5-0\.5b-instruct-q4_k_m\.gguf/);
-    assert.match(registrySource, /downloadUrl/);
+  it("registry includes the default qwen Ollama local test model", () => {
+    assert.match(registrySource, /qwen2\.5:0\.5b/);
+    assert.match(registrySource, /ollamaModel/);
+    assert.match(registrySource, /"provider": "ollama"/);
   });
 });

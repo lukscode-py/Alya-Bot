@@ -4,7 +4,7 @@ import { formatLocalStatus } from "../../services/ai/formatters.js";
 
 export default {
   name: "ai-local-status",
-  description: "Mostra status do provedor local llama.cpp.",
+  description: "Mostra status do provedor local Ollama.",
   commands: ["ai-local-status", "ia-local-status"],
   usage: `${PREFIX}ai-local-status`,
   /**

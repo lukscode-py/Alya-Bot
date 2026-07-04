@@ -5,13 +5,13 @@ Organização no projeto:
 - src/services/ai/: código do serviço central de IA.
 - src/commands/owner/ai-*.js: comandos de gerenciamento da IA.
 - database/ai/: registry e estado persistente da IA.
-- assets/ai/models/: modelos locais GGUF e arquivos grandes de runtime/modelo.
+- Ollama gerencia os modelos locais fora do repositório pelo próprio runtime.
 
 Arquivos:
 - src/config.js: contém AI_CONFIG.
 - database/ai/provider-state.json: estado de rotação das keys. Não commitar.
 - database/ai/models-registry.json: registro de modelos locais.
-- assets/ai/models/: modelos GGUF locais. Não commitar.
+- Não commitar modelos locais, caches ou arquivos grandes de runtime.
 
 Uso interno:
 import { aiService } from "./services/ai/index.js";

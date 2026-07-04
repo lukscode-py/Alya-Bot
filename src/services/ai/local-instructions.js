@@ -15,43 +15,63 @@ function getPlatformLabel() {
 export function getLocalRuntimeManualInstructions() {
   if (isTermux()) {
     return [
-      "[AI LOCAL] Instalação recomendada para Termux:",
+      "[AI LOCAL] Instalação automática recomendada para Termux:",
       "",
-      "pkg update",
-      "pkg install -y llama-cpp",
+      "pkg update -y",
+      "pkg upgrade -y",
+      "pkg install tur-repo -y",
+      "pkg install ollama -y",
       "",
       "Depois valide:",
-      "command -v llama-cli && llama-cli --help",
+      "ollama --version",
       "",
-      "Se funcionar, rode novamente:",
+      "O bot iniciará o servidor com ollama serve quando necessário.",
+      "Para preparar modelo default, rode:",
+      "./prepare-ai-ambiente.sh",
+    ].join("\n");
+  }
+
+  if (process.platform === "linux") {
+    return [
+      `[AI LOCAL] Instalação automática recomendada para ${getPlatformLabel()}:`,
+      "",
+      "curl -fsSL https://ollama.com/install.sh | sh",
+      "",
+      "Depois valide:",
+      "ollama --version",
+      "",
+      "O bot iniciará o servidor com ollama serve quando necessário.",
+      "Para preparar modelo default, rode:",
+      "./prepare-ai-ambiente.sh",
+    ].join("\n");
+  }
+
+  if (process.platform === "win32") {
+    return [
+      `[AI LOCAL] Instalação recomendada para ${getPlatformLabel()}:`,
+      "",
+      "Abra o PowerShell como Administrador e execute:",
+      "irm https://ollama.com/install.ps1 | iex",
+      "",
+      "Depois valide:",
+      "ollama --version",
+      "",
+      "O bot iniciará o servidor com ollama serve quando necessário.",
+      "Para preparar modelo default, rode:",
       "./prepare-ai-ambiente.sh",
     ].join("\n");
   }
 
   return [
-    `[AI LOCAL] Instalação manual recomendada para ${getPlatformLabel()}:`,
+    `[AI LOCAL] Instalação recomendada para ${getPlatformLabel()}:`,
     "",
-    "1. Abra a página oficial de releases do llama.cpp:",
-    "https://github.com/ggml-org/llama.cpp/releases",
+    "Instale o Ollama pelo instalador oficial do seu sistema.",
     "",
-    "2. Baixe o binário compilado compatível com seu sistema.",
-    "   Exemplos:",
-    "   - Linux x64: Ubuntu x64 (CPU)",
-    "   - Windows x64: Windows x64 (CPU)",
-    "   - macOS Apple Silicon: macOS Apple Silicon (arm64)",
-    "   - macOS Intel: macOS Intel (x64)",
+    "Depois valide:",
+    "ollama --version",
     "",
-    "3. Extraia o arquivo baixado.",
-    "",
-    "4. Ache o executável llama-cli dentro da pasta extraída.",
-    "",
-    "5. No src/config.js, configure:",
-    "",
-    'local: {',
-    '  runtimePath: "/caminho/completo/para/llama-cli"',
-    "}",
-    "",
-    "6. Rode novamente:",
+    "O bot iniciará o servidor com ollama serve quando necessário.",
+    "Para preparar modelo default, rode:",
     "./prepare-ai-ambiente.sh",
   ].join("\n");
 }
