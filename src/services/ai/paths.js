@@ -1,7 +1,8 @@
 import path from "node:path";
 
 export function buildAiPaths(rootDir) {
-  const baseDir = path.join(rootDir, "data", "ai");
+  const baseDir = path.join(rootDir, "database", "ai");
+  const modelsDir = path.join(rootDir, "assets", "ai", "models");
 
   return {
     baseDir,
@@ -9,7 +10,7 @@ export function buildAiPaths(rootDir) {
     configExamplePath: path.join(baseDir, "config.example.jsonc"),
     statePath: path.join(baseDir, "provider-state.json"),
     modelsRegistryPath: path.join(baseDir, "models-registry.json"),
-    modelsDir: path.join(baseDir, "models"),
-    llamaModelsDir: path.join(baseDir, "models", "llama.cpp"),
+    modelsDir,
+    llamaModelsDir: path.join(modelsDir, "llama.cpp"),
   };
 }

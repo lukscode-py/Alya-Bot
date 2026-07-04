@@ -1,11 +1,17 @@
 Alya AI Service
 
+Organização no projeto:
+- src/services/ai/: código do serviço central de IA.
+- src/commands/owner/ai-*.js: comandos de gerenciamento da IA.
+- database/ai/: configuração, registry e estado persistente da IA.
+- assets/ai/models/: modelos locais GGUF e arquivos grandes de runtime/modelo.
+
 Arquivos:
-- data/ai/config.example.jsonc: exemplo comentado.
-- data/ai/config.json: configuração real com API keys. Não commitar.
-- data/ai/provider-state.json: estado de rotação das keys. Não commitar.
-- data/ai/models-registry.json: registro de modelos locais.
-- data/ai/models/: modelos GGUF locais. Não commitar.
+- database/ai/config.example.jsonc: exemplo comentado.
+- database/ai/config.json: configuração real com API keys. Não commitar.
+- database/ai/provider-state.json: estado de rotação das keys. Não commitar.
+- database/ai/models-registry.json: registro de modelos locais.
+- assets/ai/models/: modelos GGUF locais. Não commitar.
 
 Uso interno:
 import { aiService } from "./services/ai/index.js";
@@ -39,4 +45,4 @@ Comandos já migrados para aiService:
 - $deepseek / $deep-seek -> provider deepseek
 - $gpt / $gpt-5 / $gpt-5-mini -> provider openai
 
-Esses comandos dependem de data/ai/config.json com ai.enabled=true e provider ativo.
+Esses comandos dependem de database/ai/config.json com ai.enabled=true e provider ativo.

@@ -78,7 +78,7 @@ export function formatModelsRegistry(result) {
   const models = Array.isArray(result.models) ? result.models : [];
 
   if (!models.length) {
-    return "Nenhum modelo local cadastrado em data/ai/models-registry.json.";
+    return "Nenhum modelo local cadastrado em database/ai/models-registry.json.";
   }
 
   return [

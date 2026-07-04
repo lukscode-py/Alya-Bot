@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { createAiService } from "../services/ai/index.js";
+import { buildAiPaths } from "../services/ai/paths.js";
 
 function createTempRoot() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "alya-ai-service-"));
@@ -78,7 +79,7 @@ describe("AI Service", () => {
     assert.equal(result.ok, true);
     assert.equal(result.text, "OK");
 
-    const statePath = path.join(rootDir, "data", "ai", "provider-state.json");
+    const statePath = buildAiPaths(rootDir).statePath;
     const stateRaw = fs.readFileSync(statePath, "utf8");
 
     assert.equal(stateRaw.includes("bad-key"), false);

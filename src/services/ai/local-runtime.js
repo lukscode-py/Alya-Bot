@@ -70,7 +70,7 @@ export async function downloadLocalModel({ paths, modelInfo, force = false }) {
   if (!modelInfo.downloadUrl) {
     throw createAiError(
       AI_ERROR_CODES.AI_LOCAL_MODEL_DOWNLOAD_FAILED,
-      `O modelo ${modelInfo.id} não possui downloadUrl verificado. Baixe manualmente e coloque em data/ai/models/llama.cpp/${modelInfo.family}/${modelInfo.file}.`,
+      `O modelo ${modelInfo.id} não possui downloadUrl verificado. Baixe manualmente e coloque em assets/ai/models/llama.cpp/${modelInfo.family}/${modelInfo.file}.`,
       { provider: "local", model: modelInfo.id },
     );
   }

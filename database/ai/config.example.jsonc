@@ -1,7 +1,7 @@
 {
   // Serviço central de IA da Alya.
-  // Copie este arquivo para data/ai/config.json e preencha suas keys.
-  // Nunca commite data/ai/config.json com API keys reais.
+  // Copie este arquivo para database/ai/config.json e preencha suas keys.
+  // Nunca commite database/ai/config.json com API keys reais.
 
   "ai": {
     "enabled": false,
