@@ -143,7 +143,7 @@ export class AiService {
             `Dica: ${environment.installHint}`,
             "Deseja preparar o ambiente agora? Se cancelar, o provedor local será desativado automaticamente. (s/n) >",
           ].join("\n"),
-          { enabled: interactive, defaultValue: false },
+          { enabled: interactive, defaultValue: false, onLog: warningLog },
         ));
 
       if (!shouldPrepare) {

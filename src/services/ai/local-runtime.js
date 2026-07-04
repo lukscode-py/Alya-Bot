@@ -217,8 +217,25 @@ export async function getLocalRuntimeStatus(providerConfig = {}) {
   };
 }
 
-export async function askYesNo(question, { defaultValue = false, enabled = true } = {}) {
-  if (!enabled || !input.isTTY || !output.isTTY) {
+export async function askYesNo(
+  question,
+  { defaultValue = false, enabled = true, onLog = null } = {},
+) {
+  if (!enabled) {
+    if (onLog) {
+      onLog("[AI LOCAL] Pergunta interativa desativada. Usando resposta padrão: não.");
+    }
+
+    return defaultValue;
+  }
+
+  if (!input.isTTY || !output.isTTY) {
+    if (onLog) {
+      onLog(
+        "[AI LOCAL] Terminal não interativo detectado. Não é possível responder s/n aqui. Usando resposta padrão: não.",
+      );
+    }
+
     return defaultValue;
   }
 
