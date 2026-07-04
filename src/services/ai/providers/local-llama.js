@@ -58,7 +58,7 @@ export async function requestLocalLlama({
     );
   }
 
-  const runtimeStatus = getLocalRuntimeStatus(providerConfig);
+  const runtimeStatus = await getLocalRuntimeStatus(providerConfig);
 
   if (!runtimeStatus.ready) {
     throw createAiError(

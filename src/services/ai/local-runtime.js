@@ -10,7 +10,15 @@ import { promisify } from "node:util";
 import { AI_ERROR_CODES, createAiError } from "./errors.js";
 
 const execFileAsync = promisify(execFile);
-const RUNTIME_CANDIDATES = ["llama-cli", "llama-cli.exe", "llama", "llama.exe", "main", "main.exe"];
+
+const RUNTIME_CANDIDATES = [
+  "llama-cli",
+  "llama-cli.exe",
+  "llama",
+  "llama.exe",
+  "main",
+  "main.exe",
+];
 
 function isTermux() {
   return Boolean(process.env.PREFIX?.includes("com.termux"));
@@ -23,6 +31,10 @@ function splitPathEnv() {
 }
 
 function findExecutable(command) {
+  if (!command) {
+    return "";
+  }
+
   if (path.isAbsolute(command) && fs.existsSync(command)) {
     return command;
   }
@@ -42,11 +54,31 @@ function commandExists(command) {
   return Boolean(findExecutable(command));
 }
 
+async function canExecuteRuntime(runtimePath) {
+  if (!runtimePath) {
+    return false;
+  }
+
+  try {
+    await execFileAsync(runtimePath, ["--help"], {
+      timeout: 15000,
+      maxBuffer: 1024 * 1024 * 2,
+    });
+
+    return true;
+  } catch (error) {
+    // Alguns builds imprimem help em stderr e retornam 0/1 dependendo da versão.
+    const outputText = `${error.stdout || ""}\n${error.stderr || ""}\n${error.message || ""}`;
+
+    return /llama|usage|model|prompt|gguf/i.test(outputText);
+  }
+}
+
 function getInstallCommands(environment) {
   if (environment.type === "termux") {
     return [
       {
-        title: "Instalar llama.cpp pelo pacote do Termux",
+        title: "Instalar llama.cpp pelo pacote pré-compilado do Termux",
         command: "pkg",
         args: ["install", "-y", "llama-cpp"],
       },
@@ -83,11 +115,6 @@ function getInstallCommands(environment) {
       title: "Instalar llama.cpp pelo Nix profile",
       command: "nix",
       args: ["profile", "install", "nixpkgs#llama-cpp"],
-    },
-    {
-      title: "Instalar llama.cpp pelo nix-env",
-      command: "nix-env",
-      args: ["--file", "<nixpkgs>", "--install", "--attr", "llama-cpp"],
     },
     {
       title: "Instalar llama.cpp pelo conda-forge",
@@ -145,7 +172,7 @@ export function detectLocalEnvironment() {
             ? "conda"
             : "manual",
       installHint:
-        "Use um binário pré-compilado: brew install llama.cpp, nix profile install nixpkgs#llama-cpp ou conda install -y -c conda-forge llama-cpp.",
+        "Use pacote pré-compilado: brew install llama.cpp, nix profile install nixpkgs#llama-cpp ou conda install -y -c conda-forge llama-cpp.",
     };
   }
 
@@ -157,27 +184,27 @@ export function detectLocalEnvironment() {
   };
 }
 
-export function getLocalRuntimeStatus(providerConfig = {}) {
+export async function getLocalRuntimeStatus(providerConfig = {}) {
   const configuredRuntime = String(providerConfig.runtimePath || "").trim();
+  const candidates = configuredRuntime
+    ? [configuredRuntime, ...RUNTIME_CANDIDATES]
+    : RUNTIME_CANDIDATES;
 
-  if (configuredRuntime && fs.existsSync(configuredRuntime)) {
-    return {
-      ready: true,
-      runtimePath: configuredRuntime,
-      source: "config",
-      candidates: RUNTIME_CANDIDATES,
-    };
-  }
-
-  for (const candidate of RUNTIME_CANDIDATES) {
+  for (const candidate of candidates) {
     const runtimePath = findExecutable(candidate);
 
-    if (runtimePath) {
+    if (!runtimePath) {
+      continue;
+    }
+
+    const executable = await canExecuteRuntime(runtimePath);
+
+    if (executable) {
       return {
         ready: true,
         runtimePath,
-        source: "path",
-        candidates: RUNTIME_CANDIDATES,
+        source: configuredRuntime && runtimePath === configuredRuntime ? "config" : "path",
+        candidates,
       };
     }
   }
@@ -186,7 +213,7 @@ export function getLocalRuntimeStatus(providerConfig = {}) {
     ready: false,
     runtimePath: "",
     source: "",
-    candidates: RUNTIME_CANDIDATES,
+    candidates,
   };
 }
 
@@ -205,15 +232,15 @@ export async function askYesNo(question, { defaultValue = false, enabled = true 
   }
 }
 
-export async function installLocalRuntime({ providerConfig = {} } = {}) {
-  const currentStatus = getLocalRuntimeStatus(providerConfig);
+export async function installLocalRuntime({ providerConfig = {}, onLog = null } = {}) {
+  const currentStatus = await getLocalRuntimeStatus(providerConfig);
 
   if (currentStatus.ready) {
     return {
       ok: true,
       skipped: true,
       runtimePath: currentStatus.runtimePath,
-      message: "Runtime local já está instalado.",
+      message: "Runtime local já estava instalado e validado.",
     };
   }
 
@@ -233,31 +260,39 @@ export async function installLocalRuntime({ providerConfig = {} } = {}) {
   const errors = [];
 
   for (const installCommand of installCommands) {
+    const commandText = `${installCommand.command} ${installCommand.args.join(" ")}`;
+
+    if (onLog) {
+      onLog(`[AI LOCAL] Executando: ${commandText}`);
+    }
+
     try {
       await execFileAsync(installCommand.command, installCommand.args, {
-        timeout: 1000 * 60 * 15,
+        timeout: 1000 * 60 * 20,
         maxBuffer: 1024 * 1024 * 16,
       });
 
-      const nextStatus = getLocalRuntimeStatus(providerConfig);
+      const nextStatus = await getLocalRuntimeStatus(providerConfig);
 
       if (nextStatus.ready) {
         return {
           ok: true,
           skipped: false,
           runtimePath: nextStatus.runtimePath,
-          command: `${installCommand.command} ${installCommand.args.join(" ")}`,
+          command: commandText,
           message: installCommand.title,
         };
       }
+
+      errors.push(`${commandText}: terminou, mas llama-cli não ficou executável`);
     } catch (error) {
-      errors.push(`${installCommand.command}: ${error.message}`);
+      errors.push(`${commandText}: ${error.message}`);
     }
   }
 
   throw createAiError(
     AI_ERROR_CODES.AI_LOCAL_RUNTIME_NOT_FOUND,
-    `Não consegui instalar runtime local sem compilação. ${environment.installHint}\n${errors.join("\n")}`,
+    `Não consegui instalar/validar runtime local sem compilação. ${environment.installHint}\n${errors.join("\n")}`,
     { provider: "local" },
   );
 }
@@ -276,7 +311,7 @@ export function hasEnoughDiskSpaceHint(modelInfo) {
   };
 }
 
-export async function downloadLocalModel({ paths, modelInfo, force = false }) {
+export async function downloadLocalModel({ paths, modelInfo, force = false, onLog = null }) {
   if (!modelInfo) {
     throw createAiError(
       AI_ERROR_CODES.AI_MODEL_NOT_FOUND,
@@ -306,6 +341,12 @@ export async function downloadLocalModel({ paths, modelInfo, force = false }) {
 
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
+  if (onLog) {
+    onLog(`[AI LOCAL] Baixando modelo ${modelInfo.id}...`);
+    onLog(`[AI LOCAL] URL: ${modelInfo.downloadUrl}`);
+    onLog(`[AI LOCAL] Destino: ${outputPath}`);
+  }
+
   const response = await axios.get(modelInfo.downloadUrl, {
     responseType: "stream",
     timeout: 120000,
@@ -323,10 +364,23 @@ export async function downloadLocalModel({ paths, modelInfo, force = false }) {
 
   await pipeline(response.data, fs.createWriteStream(outputPath));
 
+  const stat = fs.statSync(outputPath);
+
+  if (stat.size < 1024 * 1024) {
+    fs.rmSync(outputPath, { force: true });
+
+    throw createAiError(
+      AI_ERROR_CODES.AI_LOCAL_MODEL_DOWNLOAD_FAILED,
+      "Arquivo baixado é pequeno demais para ser um modelo GGUF válido.",
+      { provider: "local", model: modelInfo.id },
+    );
+  }
+
   return {
     ok: true,
     skipped: false,
     model: modelInfo.id,
     path: outputPath,
+    sizeBytes: stat.size,
   };
 }

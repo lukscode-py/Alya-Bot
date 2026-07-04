@@ -123,10 +123,17 @@ export class AiService {
       };
     }
 
-    const runtimeStatus = getLocalRuntimeStatus(this.config.local);
+    infoLog("[AI LOCAL] Provedor local ativado. Verificando ambiente antes da conexão...");
+
+    const runtimeStatus = await getLocalRuntimeStatus(this.config.local);
 
     if (!runtimeStatus.ready) {
       const environment = detectLocalEnvironment();
+
+      warningLog(
+        `[AI LOCAL] Runtime llama.cpp não encontrado/validado. Ambiente=${environment.type}.`,
+      );
+
       const shouldPrepare =
         Boolean(this.config.local.autoInstallRuntime) ||
         (await askYesNo(
@@ -151,6 +158,7 @@ export class AiService {
       try {
         const installResult = await installLocalRuntime({
           providerConfig: this.config.local,
+          onLog: infoLog,
         });
 
         infoLog(
@@ -164,6 +172,8 @@ export class AiService {
           reason: "runtime-install-failed",
         };
       }
+    } else {
+      infoLog(`[AI LOCAL] Runtime validado: ${runtimeStatus.runtimePath}`);
     }
 
     const modelInfo = this.getSelectedLocalModelInfo();
@@ -181,7 +191,12 @@ export class AiService {
 
     const modelPath = getLocalModelPath(this.paths, modelInfo);
 
+    infoLog(`[AI LOCAL] Modelo selecionado: ${modelInfo.id}`);
+    infoLog(`[AI LOCAL] Caminho esperado do modelo: ${modelPath}`);
+
     if (!fs.existsSync(modelPath)) {
+      warningLog(`[AI LOCAL] Modelo ${modelInfo.id} não instalado.`);
+
       const diskHint = `${modelInfo.sizeMb ? `Tamanho aproximado: ${modelInfo.sizeMb} MB.` : ""}`;
       const shouldInstall =
         Boolean(this.config.local.autoDownloadModel) ||
@@ -211,6 +226,7 @@ export class AiService {
           paths: this.paths,
           modelInfo,
           force: false,
+          onLog: infoLog,
         });
 
         infoLog(`[AI LOCAL] Modelo pronto em ${downloadResult.path}`);
@@ -222,6 +238,8 @@ export class AiService {
           reason: "model-install-failed",
         };
       }
+    } else {
+      infoLog(`[AI LOCAL] Modelo já instalado: ${modelPath}`);
     }
 
     return {
