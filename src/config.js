@@ -125,17 +125,20 @@ export const AI_CONFIG = {
   ai: {
     enabled: true,
 
-    defaultProvider: "gemini",
+    // Padrão recomendado para Termux/Android:
+    // usa IA local primeiro para não depender de API externa.
+    defaultProvider: "local",
 
     fallbackProviders: [
       "openrouter",
+      "openaiCompatible",
       "openai",
       "deepseek",
-      "openaiCompatible",
-      "local",
+      "gemini",
     ],
 
     activeProviders: [
+      "local",
       "gemini",
       "openrouter",
       "openai",
@@ -195,14 +198,14 @@ export const AI_CONFIG = {
     },
 
     openrouter: {
-      enabled: false,
+      enabled: true,
       kind: "openaiCompatible",
       name: "OpenRouter",
       baseURL: "https://openrouter.ai/api/v1",
-      defaultModel: "openai/gpt-4o-mini",
+      defaultModel: readEnv("OPENROUTER_MODEL", "openai/gpt-4o-mini"),
       allowedModels: [],
       apiKeys: [readEnv("OPENROUTER_API_KEY")],
-      timeout: 30000,
+      timeout: 60000,
       retries: 1,
       cooldownMs: 3600000,
       rotationStrategy: "last-working-first",
@@ -215,14 +218,14 @@ export const AI_CONFIG = {
     },
 
     openaiCompatible: {
-      enabled: false,
+      enabled: true,
       kind: "openaiCompatible",
       name: "OpenAI Compatible",
-      baseURL: "https://api.exemplo.com/v1",
-      defaultModel: "modelo-exemplo",
+      baseURL: readEnv("ALYA_OPENAI_COMPATIBLE_BASE_URL", "https://api.exemplo.com/v1"),
+      defaultModel: readEnv("ALYA_OPENAI_COMPATIBLE_MODEL", "modelo-exemplo"),
       allowedModels: [],
       apiKeys: [readEnv("ALYA_OPENAI_COMPATIBLE_API_KEY")],
-      timeout: 30000,
+      timeout: 60000,
       retries: 1,
       cooldownMs: 3600000,
       rotationStrategy: "last-working-first",
@@ -252,14 +255,15 @@ export const AI_CONFIG = {
     runtimePath: "",
     // Se true, o bot inicia "ollama serve" quando a API local não estiver ativa.
     autoStartServer: true,
-    threads: 4,
-    contextSize: 2048,
-    temperature: 0.7,
-    topP: 0.9,
-    topK: 40,
-    repeatPenalty: 1.1,
-    maxTokens: 512,
+    // Perfil leve para Termux/celular fraco.
+    threads: 2,
+    contextSize: 1024,
+    temperature: 0.6,
+    topP: 0.85,
+    topK: 30,
+    repeatPenalty: 1.12,
+    maxTokens: 256,
     gpuLayers: 0,
-    timeout: 120000,
+    timeout: 180000,
   },
 };
