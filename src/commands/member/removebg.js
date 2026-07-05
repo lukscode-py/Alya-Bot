@@ -3,7 +3,7 @@ import path from "node:path";
 import { BOT_EMOJI, BOT_NAME, PREFIX, TEMP_DIR } from "../../config.js";
 import { InvalidParameterError } from "../../errors/index.js";
 import { Ffmpeg } from "../../services/ffmpeg.js";
-import { removeBg } from "../../services/alya-external-api.js";
+import { removeBackgroundLocal } from "../../services/rmbg/local-rmbg.js";
 import { processStaticSticker } from "../../services/sticker.js";
 import {
   getRandomName,
@@ -50,11 +50,9 @@ export default {
         inputPath = await downloadImage(webMessage, getRandomName());
 
         const inputBuffer = await fs.promises.readFile(inputPath);
-        const outputBuffer = await removeBg(
-          inputBuffer,
-          "image/png",
-          "imagem.png",
-        );
+        const outputBuffer = await removeBackgroundLocal(inputBuffer, {
+          fileName: "imagem.png",
+        });
 
         await sendSuccessReact();
         await sendImageFromBuffer(outputBuffer);
@@ -67,11 +65,9 @@ export default {
       convertedImagePath = await ffmpeg.convertStickerToImage(inputPath);
 
       const inputBuffer = await fs.promises.readFile(convertedImagePath);
-      const outputBuffer = await removeBg(
-        inputBuffer,
-        "image/png",
-        "sticker.png",
-      );
+      const outputBuffer = await removeBackgroundLocal(inputBuffer, {
+        fileName: "sticker.png",
+      });
       await fs.promises.writeFile(removeBgPath, outputBuffer);
 
       finalStickerPath = await processStaticSticker(removeBgPath, {

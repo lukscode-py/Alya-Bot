@@ -27,3 +27,6 @@ downloads/
 AGENTS_DEV.md
 database/ai/provider-state.json
 assets/ai/models/
+assets/ai/runtime/
+__pycache__/
+*.pyc

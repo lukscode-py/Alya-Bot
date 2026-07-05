@@ -116,6 +116,10 @@ export const DEVELOPER_MODE = false;
 // - Se quiser key direta, coloque string normal dentro do array apiKeys.
 // - provider-state fica em database/ai/provider-state.json e salva apenas hashes.
 // - IA local usa Ollama em http://127.0.0.1:11434.
+// - Em Termux, prefira modelos pequenos e limite threads/contexto para evitar crash.
+// - Comandos específicos, como gptlocal/openrouter/openai-comp, ignoram o defaultProvider.
+// - O provedor local não precisa de key, mas precisa do Ollama instalado e do modelo baixado.
+// - Provedores de API só funcionam quando a key correspondente estiver configurada.
 //
 // Exemplos de apiKeys:
 // apiKeys: [readEnv("GEMINI_API_KEY")]
@@ -123,12 +127,18 @@ export const DEVELOPER_MODE = false;
 //
 export const AI_CONFIG = {
   ai: {
+    // Liga/desliga todo o serviço central de IA.
+    // Se ficar false, comandos de IA retornam erro controlado.
     enabled: true,
 
     // Padrão recomendado para Termux/Android:
     // usa IA local primeiro para não depender de API externa.
+    // Esse provedor é usado por comandos genéricos quando eles não escolhem um provider fixo.
     defaultProvider: "local",
 
+    // Ordem de tentativa quando o comando permitir fallback.
+    // O Alya tenta o provider principal e, se falhar, passa para os próximos.
+    // Não coloque "local" aqui se quiser evitar que APIs caiam automaticamente para o celular.
     fallbackProviders: [
       "openrouter",
       "openaiCompatible",
@@ -137,6 +147,8 @@ export const AI_CONFIG = {
       "gemini",
     ],
 
+    // Lista de providers que podem ser carregados pelo serviço central.
+    // Mesmo ativo aqui, o provider ainda precisa estar enabled dentro da própria configuração.
     activeProviders: [
       "local",
       "gemini",
@@ -150,6 +162,8 @@ export const AI_CONFIG = {
 
   providers: {
     gemini: {
+      // Gemini usa API própria do Google.
+      // Configure GEMINI_API_KEY no ambiente para funcionar.
       enabled: true,
       kind: "gemini",
       name: "Gemini",
@@ -166,6 +180,9 @@ export const AI_CONFIG = {
     },
 
     openai: {
+      // Provider oficial da OpenAI.
+      // Fica desativado por padrão para não exigir key em instalação nova.
+      // Ative apenas se configurar OPENAI_API_KEY.
       enabled: false,
       kind: "openaiCompatible",
       name: "OpenAI",
@@ -182,6 +199,8 @@ export const AI_CONFIG = {
     },
 
     deepseek: {
+      // Provider oficial da DeepSeek.
+      // Fica desativado por padrão; ative quando configurar DEEPSEEK_API_KEY.
       enabled: false,
       kind: "openaiCompatible",
       name: "DeepSeek",
@@ -198,12 +217,18 @@ export const AI_CONFIG = {
     },
 
     openrouter: {
+      // OpenRouter usa formato compatível com OpenAI.
+      // Bom para acessar vários modelos por uma única API.
+      // O comando $openrouter força este provider diretamente.
       enabled: true,
       kind: "openaiCompatible",
       name: "OpenRouter",
       baseURL: "https://openrouter.ai/api/v1",
+      // Pode trocar pelo ambiente:
+      // OPENROUTER_MODEL="meta-llama/llama-3.1-8b-instruct"
       defaultModel: readEnv("OPENROUTER_MODEL", "openai/gpt-4o-mini"),
       allowedModels: [],
+      // Nunca coloque sua key direto aqui se for publicar o projeto.
       apiKeys: [readEnv("OPENROUTER_API_KEY")],
       timeout: 60000,
       retries: 1,
@@ -218,12 +243,21 @@ export const AI_CONFIG = {
     },
 
     openaiCompatible: {
+      // Provider genérico para qualquer API que siga o padrão /v1/chat/completions.
+      // Exemplos: proxies próprios, gateways, OpenRouter alternativo ou APIs self-hosted.
+      // O comando $openai-comp força este provider diretamente.
       enabled: true,
       kind: "openaiCompatible",
       name: "OpenAI Compatible",
+      // Configure via ambiente para não editar código:
+      // ALYA_OPENAI_COMPATIBLE_BASE_URL="https://sua-api.com/v1"
       baseURL: readEnv("ALYA_OPENAI_COMPATIBLE_BASE_URL", "https://api.exemplo.com/v1"),
+      // Configure via ambiente:
+      // ALYA_OPENAI_COMPATIBLE_MODEL="nome-do-modelo"
       defaultModel: readEnv("ALYA_OPENAI_COMPATIBLE_MODEL", "modelo-exemplo"),
       allowedModels: [],
+      // Configure via ambiente:
+      // ALYA_OPENAI_COMPATIBLE_API_KEY="sua_key"
       apiKeys: [readEnv("ALYA_OPENAI_COMPATIBLE_API_KEY")],
       timeout: 60000,
       retries: 1,
@@ -235,10 +269,17 @@ export const AI_CONFIG = {
   },
 
   local: {
+    // Configuração da IA local usada pelo comando $gptlocal e pelo defaultProvider local.
     enabled: true,
     kind: "local",
+    // Runtime local usado para rodar modelo no dispositivo.
+    // Atualmente o Alya Bot usa Ollama.
     provider: "ollama",
+    // Modelo padrão leve para Termux.
+    // Troque para qwen2.5:1.5b, llama3.2:1b ou gemma3:1b se o dispositivo aguentar.
     selectedModel: "qwen2.5:0.5b",
+    // API HTTP local do Ollama.
+    // Em Termux, normalmente fica em 127.0.0.1:11434.
     baseUrl: "http://127.0.0.1:11434",
     host: "127.0.0.1:11434",
     // Se true, tenta instalar o Ollama automaticamente sem perguntar.
@@ -252,18 +293,79 @@ export const AI_CONFIG = {
     // Se true, quando possível, pergunta antes de baixar modelo.
     askBeforeDownload: true,
     // Caminho opcional do executável ollama. Vazio usa o PATH.
+    // Use isso só se o comando "ollama" não estiver disponível globalmente.
     runtimePath: "",
     // Se true, o bot inicia "ollama serve" quando a API local não estiver ativa.
     autoStartServer: true,
     // Perfil leve para Termux/celular fraco.
+    // Aumentar threads/contextSize/maxTokens melhora capacidade, mas consome mais RAM/CPU.
     threads: 2,
+    // Contexto menor evita travamentos em aparelhos fracos.
     contextSize: 1024,
+    // Temperatura menor deixa respostas mais estáveis.
     temperature: 0.6,
     topP: 0.85,
     topK: 30,
     repeatPenalty: 1.12,
+    // Limite de tokens da resposta local.
+    // Em celular fraco, valores altos deixam a resposta lenta e podem travar.
     maxTokens: 256,
+    // 0 força CPU. Em Termux/Android, GPU geralmente não é usada pelo Ollama.
     gpuLayers: 0,
+    // Timeout maior porque modelo local em CPU pode demorar para responder.
     timeout: 180000,
+  },
+};
+
+// =====================================================
+// CONFIGURAÇÃO LOCAL DE REMOÇÃO DE FUNDO / RMBG
+// =====================================================
+//
+// Quando enabled=true, o comando removebg/rmbg usa IA local no lugar da API externa.
+// O runtime usa Python + TensorFlow Lite/LiteRT para executar o modelo .tflite.
+// Fluxo automático:
+// 1. Verifica se Python e runtime TFLite/LiteRT existem.
+// 2. Se autoInstallRuntime=true, tenta preparar o ambiente automaticamente.
+// 3. Se o modelo não existir e autoDownloadModel=true, baixa o modelo .tflite.
+// 4. Executa o modelo local e retorna PNG com fundo transparente.
+//
+// Termux:
+// - tenta instalar python e libs básicas via pkg.
+// - cria ambiente isolado em assets/ai/runtime/rmbg-python quando possível.
+//
+// Windows/Linux:
+// - usa Python já instalado.
+// - tenta criar venv e instalar pillow/numpy/tflite-runtime.
+// - se tflite-runtime não estiver disponível, tenta ai-edge-litert e tensorflow.
+export const RMBG_CONFIG = {
+  enabled: true,
+  provider: "local-tflite",
+
+  model: {
+    id: "u2net_fp16",
+    name: "U2Net FP16 RMBG",
+    fileName: "u2net_fp16_rmbg.tflite",
+    url: "https://github.com/lukscode-py/models_ai/raw/refs/heads/main/u2net_fp16_rmbg.tflite",
+    directory: path.join(ROOT_DIR, "assets", "ai", "models", "rmbg"),
+    path: path.join(
+      ROOT_DIR,
+      "assets",
+      "ai",
+      "models",
+      "rmbg",
+      "u2net_fp16_rmbg.tflite",
+    ),
+  },
+
+  runtime: {
+    autoPrepare: true,
+    autoInstallRuntime: true,
+    autoDownloadModel: true,
+    pythonPath: readEnv("ALYA_RMBG_PYTHON_PATH"),
+    venvDir: path.join(ROOT_DIR, "assets", "ai", "runtime", "rmbg-python"),
+    scriptPath: path.join(ROOT_DIR, "src", "scripts", "rmbg_tflite.py"),
+    timeout: 600000,
+    pipPackages: ["pillow", "numpy"],
+    interpreterPackages: ["tflite-runtime", "ai-edge-litert", "tensorflow"],
   },
 };
