@@ -24,4 +24,12 @@ describe("Local AI preparation flow", () => {
   it("local provider ensures Ollama server before request", () => {
     assert.match(providerSource, /await ensureOllamaServer/);
   });
+
+  it("confirmed startup model installation forces Ollama pull before continuing", () => {
+    assert.match(serviceSource, /ensureOllamaModel/);
+    assert.match(serviceSource, /autoDownloadModel:\s*true/);
+    assert.match(runtimeSource, /Aguarde\. O bot só continuará depois que o download terminar/);
+    assert.match(runtimeSource, /responseType:\s*"stream"/);
+    assert.match(runtimeSource, /consumeOllamaPullStream/);
+  });
 });

@@ -388,6 +388,88 @@ function normalizeModelName(modelInfoOrId) {
   return modelInfoOrId?.ollamaModel || modelInfoOrId?.id || "";
 }
 
+function parseOllamaPullLine(line) {
+  const trimmedLine = String(line || "").trim();
+
+  if (!trimmedLine) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(trimmedLine);
+  } catch {
+    return {
+      status: trimmedLine,
+    };
+  }
+}
+
+function formatPullProgress(event) {
+  if (!event) {
+    return "";
+  }
+
+  if (event.error) {
+    return `erro: ${event.error}`;
+  }
+
+  if (event.completed && event.total) {
+    const percent = Math.min(100, Math.round((event.completed / event.total) * 100));
+    const completedMb = Math.round(event.completed / 1024 / 1024);
+    const totalMb = Math.round(event.total / 1024 / 1024);
+
+    return `${event.status || "baixando"} ${percent}% (${completedMb}/${totalMb} MB)`;
+  }
+
+  return event.status || "";
+}
+
+async function consumeOllamaPullStream(stream, onLog = null) {
+  let buffer = "";
+  let lastMessage = "";
+
+  for await (const chunk of stream) {
+    buffer += chunk.toString("utf8");
+
+    const lines = buffer.split(/\r?\n/);
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      const event = parseOllamaPullLine(line);
+
+      if (!event) {
+        continue;
+      }
+
+      if (event.error) {
+        throw new Error(event.error);
+      }
+
+      const message = formatPullProgress(event);
+
+      if (message && message !== lastMessage) {
+        lastMessage = message;
+
+        if (onLog) {
+          onLog(`[AI LOCAL] Ollama pull: ${message}`);
+        }
+      }
+    }
+  }
+
+  const finalEvent = parseOllamaPullLine(buffer);
+
+  if (finalEvent?.error) {
+    throw new Error(finalEvent.error);
+  }
+
+  const finalMessage = formatPullProgress(finalEvent);
+
+  if (finalMessage && finalMessage !== lastMessage && onLog) {
+    onLog(`[AI LOCAL] Ollama pull: ${finalMessage}`);
+  }
+}
+
 export function isOllamaModelInstalled(models = [], modelName = "") {
   return models.some((model) => {
     const name = model?.name || model?.model || "";
@@ -432,21 +514,36 @@ export async function ensureOllamaModel({ providerConfig = {}, model, onLog = nu
 
   if (onLog) {
     onLog(`[AI LOCAL] Baixando modelo Ollama: ${modelName}`);
+    onLog("[AI LOCAL] Aguarde. O bot só continuará depois que o download terminar.");
   }
 
-  const response = await requestOllama("/api/pull", providerConfig, {
-    method: "POST",
-    timeout: providerConfig.pullTimeout || 1000 * 60 * 30,
-    data: {
+  const response = await axios.post(
+    `${normalizeBaseUrl(providerConfig.baseUrl)}/api/pull`,
+    {
       name: modelName,
-      stream: false,
+      stream: true,
     },
-  });
+    {
+      timeout: providerConfig.pullTimeout || 1000 * 60 * 30,
+      responseType: "stream",
+      validateStatus: () => true,
+    },
+  );
 
   if (response.status < 200 || response.status >= 300) {
     throw createAiError(
       AI_ERROR_CODES.AI_LOCAL_MODEL_DOWNLOAD_FAILED,
       response.data?.error || `Falha ao baixar modelo Ollama ${modelName}.`,
+      { provider: "local", model: modelName },
+    );
+  }
+
+  try {
+    await consumeOllamaPullStream(response.data, onLog);
+  } catch (error) {
+    throw createAiError(
+      AI_ERROR_CODES.AI_LOCAL_MODEL_DOWNLOAD_FAILED,
+      error.message || `Falha ao baixar modelo Ollama ${modelName}.`,
       { provider: "local", model: modelName },
     );
   }

@@ -246,7 +246,10 @@ export class AiService {
 
       try {
         const downloadResult = await ensureOllamaModel({
-          providerConfig: this.config.local,
+          providerConfig: {
+            ...this.config.local,
+            autoDownloadModel: true,
+          },
           model: modelName,
           onLog: infoLog,
         });

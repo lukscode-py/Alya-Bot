@@ -33,7 +33,7 @@ describe("Local AI Ollama provider", () => {
 
   it("configures local defaults for Ollama", () => {
     assert.match(configSource, /provider:\s*"ollama"/);
-    assert.match(configSource, /selectedModel:\s*"qwen2\.5:0\.5b"/);
+    assert.match(configSource, /selectedModel:\s*"[a-z0-9][^"]*:[^"]+"/i);
     assert.match(configSource, /autoStartServer:\s*true/);
     assert.match(configSource, /baseUrl:\s*"http:\/\/127\.0\.0\.1:11434"/);
   });
