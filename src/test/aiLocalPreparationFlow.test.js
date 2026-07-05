@@ -32,4 +32,12 @@ describe("Local AI preparation flow", () => {
     assert.match(runtimeSource, /responseType:\s*"stream"/);
     assert.match(runtimeSource, /consumeOllamaPullStream/);
   });
+
+  it("blocks bot startup until local AI preparation finishes", () => {
+    assert.match(serviceSource, /Preparação da IA local iniciada antes da conexão do bot/);
+    assert.match(serviceSource, /inicialização ficará aguardando até terminar/);
+    assert.match(serviceSource, /Instalação do modelo confirmada/);
+    assert.match(serviceSource, /ficará pausada até o pull terminar/);
+    assert.match(serviceSource, /Preparação da IA local finalizada/);
+  });
 });

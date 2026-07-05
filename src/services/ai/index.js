@@ -245,6 +245,8 @@ export class AiService {
       }
 
       try {
+        infoLog("[AI LOCAL] Instalação do modelo confirmada. A inicialização do bot ficará pausada até o pull terminar.");
+
         const downloadResult = await ensureOllamaModel({
           providerConfig: {
             ...this.config.local,
@@ -255,6 +257,7 @@ export class AiService {
         });
 
         infoLog(`[AI LOCAL] Modelo pronto: ${downloadResult.model}`);
+        infoLog("[AI LOCAL] Instalação do modelo concluída. O bot pode continuar iniciando.");
       } catch (error) {
         this.disableLocalProvider(error.message || "Falha ao instalar modelo local.");
         return {
@@ -286,7 +289,12 @@ export class AiService {
       };
     }
 
+    infoLog("[AI LOCAL] Preparação da IA local iniciada antes da conexão do bot.");
+    infoLog("[AI LOCAL] Se runtime/modelo precisar ser instalado, a inicialização ficará aguardando até terminar.");
+
     await this.prepareLocalProvider();
+
+    infoLog("[AI LOCAL] Preparação da IA local finalizada. Continuando inicialização do bot.");
 
     const activeProviders = this.getActiveProviders();
 
