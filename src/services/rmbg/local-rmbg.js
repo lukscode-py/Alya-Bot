@@ -143,7 +143,18 @@ function installSystemPythonIfPossible({
     const termuxPackages = (
       Array.isArray(RMBG_CONFIG.runtime.termuxPackages)
         ? RMBG_CONFIG.runtime.termuxPackages
-        : ["python", "python-numpy", "python-pillow", "clang", "libjpeg-turbo", "zlib", "freetype", "libpng", "openblas"]
+        : [
+            "python",
+            "python-numpy",
+            "python-pillow",
+            "python-tflite-runtime",
+            "clang",
+            "libjpeg-turbo",
+            "zlib",
+            "freetype",
+            "libpng",
+            "openblas",
+          ]
     ).join(" ");
 
     runShellSync(
@@ -208,6 +219,10 @@ async function ensureDirectory(directory) {
 }
 
 function createVenvIfPossible(basePython) {
+  if (isTermux()) {
+    return basePython;
+  }
+
   const venvDir = RMBG_CONFIG.runtime.venvDir;
   const venvPython = getVenvPythonPath(venvDir);
 
@@ -255,8 +270,16 @@ function installPythonPackages(
 
   if (isTermux()) {
     if (onLog) {
-      onLog("[RMBG LOCAL] Termux detectado: pulando pip install de pillow/numpy.");
-      onLog("[RMBG LOCAL] Dependências com versão nativa devem vir de pkg: python-numpy e python-pillow.");
+      onLog("[RMBG LOCAL] Termux detectado: pulando pip install de pillow/numpy/tflite-runtime.");
+      onLog("[RMBG LOCAL] Dependências com versão nativa devem vir de pkg: python-numpy, python-pillow e python-tflite-runtime.");
+    }
+
+    if (checkPythonRuntime(python)) {
+      return;
+    }
+
+    if (onLog) {
+      onLog("[RMBG LOCAL] Runtime ainda não validado após pkg. Tentando fallback LiteRT/TensorFlow via pip.");
     }
   } else {
     runPythonSync(python, ["-m", "ensurepip", "--upgrade"], {

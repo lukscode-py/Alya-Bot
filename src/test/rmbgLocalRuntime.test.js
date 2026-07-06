@@ -24,6 +24,7 @@ describe("Local RMBG runtime", () => {
     assert.match(configSource, /termuxPackages/);
     assert.match(configSource, /python-numpy/);
     assert.match(configSource, /python-pillow/);
+    assert.match(configSource, /python-tflite-runtime/);
   });
 
   it("keeps RMBG model and Python runtime out of git", () => {
@@ -42,7 +43,9 @@ describe("Local RMBG runtime", () => {
     assert.match(serviceSource, /termuxPackages/);
     assert.match(serviceSource, /python-numpy/);
     assert.match(serviceSource, /python-pillow/);
-    assert.match(serviceSource, /pulando pip install de pillow\/numpy/);
+    assert.match(serviceSource, /python-tflite-runtime/);
+    assert.match(serviceSource, /pulando pip install de pillow\/numpy\/tflite-runtime/);
+    assert.match(serviceSource, /if \(isTermux\(\)\) \{\s*return basePython;/);
     assert.match(serviceSource, /winget/);
     assert.match(serviceSource, /apt-get/);
     assert.match(serviceSource, /python3/);
