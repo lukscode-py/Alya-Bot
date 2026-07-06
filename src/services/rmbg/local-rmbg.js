@@ -29,13 +29,12 @@ function commandExists(command) {
 }
 
 function runSync(command, args = [], options = {}) {
-  const showOutput = Boolean(options.showOutput);
+  const { showOutput = false, ...spawnOptions } = options;
   const result = spawnSync(command, args, {
     encoding: showOutput ? undefined : "utf8",
     stdio: showOutput ? "inherit" : "pipe",
     shell: false,
-    ...options,
-    showOutput: undefined,
+    ...spawnOptions,
   });
 
   if (result.status !== 0 && !options.allowFail) {
@@ -138,10 +137,17 @@ function installSystemPythonIfPossible({
   if (isTermux()) {
     if (onLog) {
       onLog("[RMBG LOCAL] Preparando dependências no Termux com pkg.");
+      onLog("[RMBG LOCAL] numpy/pillow serão instalados via pkg, não via pip.");
     }
 
+    const termuxPackages = (
+      Array.isArray(RMBG_CONFIG.runtime.termuxPackages)
+        ? RMBG_CONFIG.runtime.termuxPackages
+        : ["python", "python-numpy", "python-pillow", "clang", "libjpeg-turbo", "zlib", "freetype", "libpng", "openblas"]
+    ).join(" ");
+
     runShellSync(
-      "pkg update -y && pkg install -y python clang libjpeg-turbo zlib freetype libpng openblas",
+      `pkg update -y && pkg install -y ${termuxPackages}`,
       { allowFail: true, showOutput: true },
     );
     return;
@@ -247,20 +253,27 @@ function installPythonPackages(
     onLog("[RMBG LOCAL] Instalando dependências Python para TensorFlow Lite/LiteRT.");
   }
 
-  runPythonSync(python, ["-m", "ensurepip", "--upgrade"], {
-    allowFail: true,
-    showOutput: true,
-  });
-  runPythonSync(python, ["-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], {
-    allowFail: true,
-    showOutput: true,
-  });
-
-  for (const packageName of RMBG_CONFIG.runtime.pipPackages) {
-    runPythonSync(python, ["-m", "pip", "install", "--upgrade", packageName], {
+  if (isTermux()) {
+    if (onLog) {
+      onLog("[RMBG LOCAL] Termux detectado: pulando pip install de pillow/numpy.");
+      onLog("[RMBG LOCAL] Dependências com versão nativa devem vir de pkg: python-numpy e python-pillow.");
+    }
+  } else {
+    runPythonSync(python, ["-m", "ensurepip", "--upgrade"], {
       allowFail: true,
       showOutput: true,
     });
+    runPythonSync(python, ["-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], {
+      allowFail: true,
+      showOutput: true,
+    });
+
+    for (const packageName of RMBG_CONFIG.runtime.pipPackages) {
+      runPythonSync(python, ["-m", "pip", "install", "--upgrade", packageName], {
+        allowFail: true,
+        showOutput: true,
+      });
+    }
   }
 
   if (checkPythonRuntime(python)) {
@@ -268,6 +281,10 @@ function installPythonPackages(
   }
 
   for (const packageName of RMBG_CONFIG.runtime.interpreterPackages) {
+    if (onLog) {
+      onLog(`[RMBG LOCAL] Tentando instalar interpretador TFLite/LiteRT via pip: ${packageName}`);
+    }
+
     runPythonSync(python, ["-m", "pip", "install", "--upgrade", packageName], {
       allowFail: true,
       showOutput: true,

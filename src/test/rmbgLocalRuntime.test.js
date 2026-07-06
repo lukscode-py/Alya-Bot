@@ -21,6 +21,9 @@ describe("Local RMBG runtime", () => {
     assert.match(configSource, /askBeforeDownload:\s*true/);
     assert.match(configSource, /u2net_fp16_rmbg\.tflite/);
     assert.match(configSource, /models_ai\/raw\/refs\/heads\/main\/u2net_fp16_rmbg\.tflite/);
+    assert.match(configSource, /termuxPackages/);
+    assert.match(configSource, /python-numpy/);
+    assert.match(configSource, /python-pillow/);
   });
 
   it("keeps RMBG model and Python runtime out of git", () => {
@@ -36,6 +39,10 @@ describe("Local RMBG runtime", () => {
 
   it("local service prepares Termux, Windows and Linux runtime paths", () => {
     assert.match(serviceSource, /pkg update -y/);
+    assert.match(serviceSource, /termuxPackages/);
+    assert.match(serviceSource, /python-numpy/);
+    assert.match(serviceSource, /python-pillow/);
+    assert.match(serviceSource, /pulando pip install de pillow\/numpy/);
     assert.match(serviceSource, /winget/);
     assert.match(serviceSource, /apt-get/);
     assert.match(serviceSource, /python3/);

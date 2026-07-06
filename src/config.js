@@ -369,7 +369,22 @@ export const RMBG_CONFIG = {
     venvDir: path.join(ROOT_DIR, "assets", "ai", "runtime", "rmbg-python"),
     scriptPath: path.join(ROOT_DIR, "src", "scripts", "rmbg_tflite.py"),
     timeout: 600000,
+    // No Termux, pacotes com build nativo disponível devem ser instalados via pkg.
+    // Isso evita compilar numpy/pillow via pip no Android.
+    termuxPackages: [
+      "python",
+      "python-numpy",
+      "python-pillow",
+      "clang",
+      "libjpeg-turbo",
+      "zlib",
+      "freetype",
+      "libpng",
+      "openblas",
+    ],
+    // Usado em Windows/Linux. No Termux, esses pacotes são pulados e instalados via pkg.
     pipPackages: ["pillow", "numpy"],
+    // Interpretadores TFLite/LiteRT ficam como fallback via pip quando não houver pacote nativo.
     interpreterPackages: ["tflite-runtime", "ai-edge-litert", "tensorflow"],
   },
 };
