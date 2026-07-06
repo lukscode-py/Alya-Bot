@@ -50,6 +50,7 @@ describe("Local RMBG runtime", () => {
     assert.match(serviceSource, /python-tflite-runtime/);
     assert.match(serviceSource, /pulando pip install de pillow\/numpy\/tflite-runtime/);
     assert.match(serviceSource, /if \(isTermux\(\)\) \{\s*return basePython;/);
+    assert.match(serviceSource, /if \(isTermux\(\)\) \{\s*candidates\.push/);
     assert.match(serviceSource, /não será executado pip install tflite-runtime no Termux/);
     assert.match(serviceSource, /packageName !== "tflite-runtime"/);
     assert.match(serviceSource, /winget/);

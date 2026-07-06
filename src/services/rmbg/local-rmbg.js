@@ -101,6 +101,15 @@ function getPythonCandidates() {
     candidates.push({ command: configuredPython, args: [] });
   }
 
+  if (isTermux()) {
+    candidates.push(
+      { command: "python3", args: [] },
+      { command: "python", args: [] },
+    );
+
+    return candidates;
+  }
+
   const venvPython = getVenvPythonPath(RMBG_CONFIG.runtime.venvDir);
 
   if (fs.existsSync(venvPython)) {
