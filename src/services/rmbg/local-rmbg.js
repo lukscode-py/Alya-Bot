@@ -59,6 +59,28 @@ function runShellSync(command, options = {}) {
   ], options);
 }
 
+function getTermuxPackages() {
+  return Array.isArray(RMBG_CONFIG.runtime.termuxPackages)
+    ? RMBG_CONFIG.runtime.termuxPackages
+    : [
+        "python",
+        "python-numpy",
+        "python-pillow",
+        "clang",
+        "libjpeg-turbo",
+        "zlib",
+        "freetype",
+        "libpng",
+        "openblas",
+      ];
+}
+
+function getTermuxInterpreterPackages() {
+  return Array.isArray(RMBG_CONFIG.runtime.termuxInterpreterPackages)
+    ? RMBG_CONFIG.runtime.termuxInterpreterPackages
+    : ["python-tflite-runtime"];
+}
+
 function runPythonSync(python, args = [], options = {}) {
   return runSync(python.command, [...python.args, ...args], options);
 }
@@ -137,30 +159,30 @@ function installSystemPythonIfPossible({
   if (isTermux()) {
     if (onLog) {
       onLog("[RMBG LOCAL] Preparando dependências no Termux com pkg.");
-      onLog("[RMBG LOCAL] numpy/pillow serão instalados via pkg, não via pip.");
+      onLog("[RMBG LOCAL] numpy/pillow/tflite-runtime serão instalados via pkg, não via pip.");
+      onLog(
+        `[RMBG LOCAL] Fluxo Termux: pkg install ${[
+          ...getTermuxPackages(),
+          ...getTermuxInterpreterPackages(),
+        ].join(" ")}`,
+      );
     }
 
-    const termuxPackages = (
-      Array.isArray(RMBG_CONFIG.runtime.termuxPackages)
-        ? RMBG_CONFIG.runtime.termuxPackages
-        : [
-            "python",
-            "python-numpy",
-            "python-pillow",
-            "python-tflite-runtime",
-            "clang",
-            "libjpeg-turbo",
-            "zlib",
-            "freetype",
-            "libpng",
-            "openblas",
-          ]
-    ).join(" ");
+    runShellSync("pkg update -y", { allowFail: true, showOutput: true });
 
-    runShellSync(
-      `pkg update -y && pkg install -y ${termuxPackages}`,
-      { allowFail: true, showOutput: true },
-    );
+    const termuxPackages = getTermuxPackages().join(" ");
+    runShellSync(`pkg install -y ${termuxPackages}`, {
+      allowFail: true,
+      showOutput: true,
+    });
+
+    for (const packageName of getTermuxInterpreterPackages()) {
+      runShellSync(`pkg install -y ${packageName}`, {
+        allowFail: true,
+        showOutput: true,
+      });
+    }
+
     return;
   }
 
@@ -278,6 +300,17 @@ function installPythonPackages(
       return;
     }
 
+    if (!RMBG_CONFIG.runtime.allowTermuxPipFallback) {
+      throw new Error(
+        [
+          "TensorFlow Lite/LiteRT não foi validado após instalação via pkg no Termux.",
+          "Por segurança, não será executado pip install tflite-runtime no Termux.",
+          "Verifique se o pacote python-tflite-runtime do Termux está compatível com a versão atual do Python.",
+          "Tente atualizar os repositórios com termux-change-repo, depois rode: pkg update -y && pkg upgrade -y && pkg install -y python-tflite-runtime",
+        ].join("\n"),
+      );
+    }
+
     if (onLog) {
       onLog("[RMBG LOCAL] Runtime ainda não validado após pkg. Tentando fallback LiteRT/TensorFlow via pip.");
     }
@@ -303,7 +336,13 @@ function installPythonPackages(
     return;
   }
 
-  for (const packageName of RMBG_CONFIG.runtime.interpreterPackages) {
+  const interpreterPackages = isTermux()
+    ? RMBG_CONFIG.runtime.interpreterPackages.filter(
+        (packageName) => packageName !== "tflite-runtime",
+      )
+    : RMBG_CONFIG.runtime.interpreterPackages;
+
+  for (const packageName of interpreterPackages) {
     if (onLog) {
       onLog(`[RMBG LOCAL] Tentando instalar interpretador TFLite/LiteRT via pip: ${packageName}`);
     }

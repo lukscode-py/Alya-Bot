@@ -375,7 +375,6 @@ export const RMBG_CONFIG = {
       "python",
       "python-numpy",
       "python-pillow",
-      "python-tflite-runtime",
       "clang",
       "libjpeg-turbo",
       "zlib",
@@ -383,6 +382,8 @@ export const RMBG_CONFIG = {
       "libpng",
       "openblas",
     ],
+    termuxInterpreterPackages: ["python-tflite-runtime"],
+    allowTermuxPipFallback: false,
     // Usado em Windows/Linux. No Termux, esses pacotes são pulados e instalados via pkg.
     pipPackages: ["pillow", "numpy"],
     // Interpretadores TFLite/LiteRT ficam como fallback via pip fora do Termux

@@ -25,6 +25,8 @@ describe("Local RMBG runtime", () => {
     assert.match(configSource, /python-numpy/);
     assert.match(configSource, /python-pillow/);
     assert.match(configSource, /python-tflite-runtime/);
+    assert.match(configSource, /termuxInterpreterPackages/);
+    assert.match(configSource, /allowTermuxPipFallback:\s*false/);
   });
 
   it("keeps RMBG model and Python runtime out of git", () => {
@@ -41,11 +43,15 @@ describe("Local RMBG runtime", () => {
   it("local service prepares Termux, Windows and Linux runtime paths", () => {
     assert.match(serviceSource, /pkg update -y/);
     assert.match(serviceSource, /termuxPackages/);
+    assert.match(serviceSource, /getTermuxPackages/);
+    assert.match(serviceSource, /getTermuxInterpreterPackages/);
     assert.match(serviceSource, /python-numpy/);
     assert.match(serviceSource, /python-pillow/);
     assert.match(serviceSource, /python-tflite-runtime/);
     assert.match(serviceSource, /pulando pip install de pillow\/numpy\/tflite-runtime/);
     assert.match(serviceSource, /if \(isTermux\(\)\) \{\s*return basePython;/);
+    assert.match(serviceSource, /não será executado pip install tflite-runtime no Termux/);
+    assert.match(serviceSource, /packageName !== "tflite-runtime"/);
     assert.match(serviceSource, /winget/);
     assert.match(serviceSource, /apt-get/);
     assert.match(serviceSource, /python3/);
