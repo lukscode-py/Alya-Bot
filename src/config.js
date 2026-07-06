@@ -323,10 +323,10 @@ export const AI_CONFIG = {
 //
 // Quando enabled=true, o comando removebg/rmbg usa IA local no lugar da API externa.
 // O runtime usa Python + TensorFlow Lite/LiteRT para executar o modelo .tflite.
-// Fluxo automático:
+// Fluxo de inicialização:
 // 1. Verifica se Python e runtime TFLite/LiteRT existem.
-// 2. Se autoInstallRuntime=true, tenta preparar o ambiente automaticamente.
-// 3. Se o modelo não existir e autoDownloadModel=true, baixa o modelo .tflite.
+// 2. Se faltar ambiente, pergunta no terminal se deseja preparar agora.
+// 3. Se o modelo não existir, pergunta no terminal se deseja baixar agora.
 // 4. Executa o modelo local e retorna PNG com fundo transparente.
 //
 // Termux:
@@ -359,8 +359,12 @@ export const RMBG_CONFIG = {
 
   runtime: {
     autoPrepare: true,
-    autoInstallRuntime: true,
-    autoDownloadModel: true,
+    // false = pergunta s/n na inicialização, igual ao provedor local Ollama.
+    // true = instala/prepara sem perguntar.
+    autoInstallRuntime: false,
+    autoDownloadModel: false,
+    askBeforePrepare: true,
+    askBeforeDownload: true,
     pythonPath: readEnv("ALYA_RMBG_PYTHON_PATH"),
     venvDir: path.join(ROOT_DIR, "assets", "ai", "runtime", "rmbg-python"),
     scriptPath: path.join(ROOT_DIR, "src", "scripts", "rmbg_tflite.py"),

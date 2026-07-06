@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { describe, it } from "node:test";
 
 const configSource = fs.readFileSync("src/config.js", "utf8");
+const indexSource = fs.readFileSync("src/index.js", "utf8");
 const commandSource = fs.readFileSync("src/commands/member/removebg.js", "utf8");
 const serviceSource = fs.readFileSync("src/services/rmbg/local-rmbg.js", "utf8");
 const scriptSource = fs.readFileSync("src/scripts/rmbg_tflite.py", "utf8");
@@ -14,8 +15,10 @@ describe("Local RMBG runtime", () => {
     assert.match(configSource, /enabled:\s*true/);
     assert.match(configSource, /provider:\s*"local-tflite"/);
     assert.match(configSource, /autoPrepare:\s*true/);
-    assert.match(configSource, /autoInstallRuntime:\s*true/);
-    assert.match(configSource, /autoDownloadModel:\s*true/);
+    assert.match(configSource, /autoInstallRuntime:\s*false/);
+    assert.match(configSource, /autoDownloadModel:\s*false/);
+    assert.match(configSource, /askBeforePrepare:\s*true/);
+    assert.match(configSource, /askBeforeDownload:\s*true/);
     assert.match(configSource, /u2net_fp16_rmbg\.tflite/);
     assert.match(configSource, /models_ai\/raw\/refs\/heads\/main\/u2net_fp16_rmbg\.tflite/);
   });
@@ -44,6 +47,16 @@ describe("Local RMBG runtime", () => {
     assert.match(serviceSource, /axios\.get\(RMBG_CONFIG\.model\.url/);
     assert.match(serviceSource, /autoDownloadModel/);
     assert.match(serviceSource, /pipeline/);
+  });
+
+  it("prepares RMBG during bot startup and asks before setup/download", () => {
+    assert.match(indexSource, /prepareLocalRmbgStartup/);
+    assert.match(indexSource, /await prepareLocalRmbgStartup\(\)/);
+    assert.match(serviceSource, /export async function prepareLocalRmbgStartup/);
+    assert.match(serviceSource, /askYesNo/);
+    assert.match(serviceSource, /Deseja preparar o ambiente agora/);
+    assert.match(serviceSource, /Deseja baixar o modelo agora/);
+    assert.match(serviceSource, /disableRmbgForCurrentRun/);
   });
 
   it("Python helper supports common TFLite and TensorFlow runtimes", () => {

@@ -6,6 +6,8 @@ import { spawn, spawnSync } from "node:child_process";
 import { pipeline } from "node:stream/promises";
 import axios from "axios";
 import { RMBG_CONFIG, TEMP_DIR } from "../../config.js";
+import { askYesNo } from "../ai/local-runtime.js";
+import { infoLog, warningLog } from "../../utils/logger.js";
 
 function isTermux() {
   return (
@@ -103,12 +105,39 @@ function resolvePython() {
   return null;
 }
 
-function installSystemPythonIfPossible() {
-  if (!RMBG_CONFIG.runtime.autoInstallRuntime) {
+function shouldPromptRmbgSetup() {
+  return Boolean(
+    process.stdin.isTTY &&
+      process.stdout.isTTY &&
+      !process.env.CI &&
+      !process.env.NODE_TEST_CONTEXT &&
+      !process.argv.some((arg) => /(^|\/)(test|node:test)|--test/.test(arg)),
+  );
+}
+
+function disableRmbgForCurrentRun(reason, onWarning = warningLog) {
+  RMBG_CONFIG.enabled = false;
+
+  if (onWarning) {
+    onWarning(
+      `[RMBG LOCAL] ${reason} Removebg local desativado automaticamente nesta execução.`,
+    );
+  }
+}
+
+function installSystemPythonIfPossible({
+  autoInstallRuntime = RMBG_CONFIG.runtime.autoInstallRuntime,
+  onLog = null,
+} = {}) {
+  if (!autoInstallRuntime) {
     return;
   }
 
   if (isTermux()) {
+    if (onLog) {
+      onLog("[RMBG LOCAL] Preparando dependências no Termux com pkg.");
+    }
+
     runShellSync(
       "pkg update -y && pkg install -y python clang libjpeg-turbo zlib freetype libpng openblas",
       { allowFail: true },
@@ -118,6 +147,10 @@ function installSystemPythonIfPossible() {
 
   if (process.platform === "win32") {
     if (commandExists("winget")) {
+      if (onLog) {
+        onLog("[RMBG LOCAL] Tentando instalar Python no Windows com winget.");
+      }
+
       runSync(
         "winget",
         [
@@ -138,6 +171,10 @@ function installSystemPythonIfPossible() {
 
   if (process.platform === "linux" && commandExists("apt-get")) {
     if (typeof process.getuid === "function" && process.getuid() === 0) {
+      if (onLog) {
+        onLog("[RMBG LOCAL] Tentando instalar Python/pip no Linux com apt-get.");
+      }
+
       runShellSync("apt-get update && apt-get install -y python3 python3-venv python3-pip", {
         allowFail: true,
       });
@@ -145,6 +182,10 @@ function installSystemPythonIfPossible() {
     }
 
     if (commandExists("sudo")) {
+      if (onLog) {
+        onLog("[RMBG LOCAL] Tentando instalar Python/pip no Linux com sudo apt-get.");
+      }
+
       runShellSync(
         "sudo -n apt-get update && sudo -n apt-get install -y python3 python3-venv python3-pip",
         { allowFail: true },
@@ -188,9 +229,19 @@ function checkPythonRuntime(python) {
   return result.status === 0;
 }
 
-function installPythonPackages(python) {
-  if (!RMBG_CONFIG.runtime.autoInstallRuntime) {
+function installPythonPackages(
+  python,
+  {
+    autoInstallRuntime = RMBG_CONFIG.runtime.autoInstallRuntime,
+    onLog = null,
+  } = {},
+) {
+  if (!autoInstallRuntime) {
     return;
+  }
+
+  if (onLog) {
+    onLog("[RMBG LOCAL] Instalando dependências Python para TensorFlow Lite/LiteRT.");
   }
 
   runPythonSync(python, ["-m", "ensurepip", "--upgrade"], { allowFail: true });
@@ -219,18 +270,26 @@ function installPythonPackages(python) {
   }
 }
 
-async function ensureRmbgModel() {
+async function ensureRmbgModel({
+  autoDownloadModel = RMBG_CONFIG.runtime.autoDownloadModel,
+  onLog = null,
+} = {}) {
   const modelPath = RMBG_CONFIG.model.path;
 
   if (fs.existsSync(modelPath)) {
     return modelPath;
   }
 
-  if (!RMBG_CONFIG.runtime.autoDownloadModel) {
+  if (!autoDownloadModel) {
     throw new Error(`Modelo RMBG não encontrado: ${modelPath}`);
   }
 
   await ensureDirectory(RMBG_CONFIG.model.directory);
+
+  if (onLog) {
+    onLog(`[RMBG LOCAL] Baixando modelo ${RMBG_CONFIG.model.id}...`);
+    onLog(`[RMBG LOCAL] Fonte: ${RMBG_CONFIG.model.url}`);
+  }
 
   const tempModelPath = `${modelPath}.download`;
   const response = await axios.get(RMBG_CONFIG.model.url, {
@@ -245,6 +304,10 @@ async function ensureRmbgModel() {
 
   await pipeline(response.data, fs.createWriteStream(tempModelPath));
   await fs.promises.rename(tempModelPath, modelPath);
+
+  if (onLog) {
+    onLog(`[RMBG LOCAL] Modelo salvo em: ${modelPath}`);
+  }
 
   return modelPath;
 }
@@ -308,7 +371,39 @@ async function runRmbgPython({ python, modelPath, inputPath, outputPath }) {
   });
 }
 
-export async function prepareLocalRmbg() {
+export async function getLocalRmbgStatus({ checkRuntime = true } = {}) {
+  if (!RMBG_CONFIG.enabled) {
+    return {
+      enabled: false,
+      ready: false,
+      runtimeReady: false,
+      modelInstalled: false,
+      python: null,
+      modelPath: RMBG_CONFIG.model.path,
+    };
+  }
+
+  const python = resolvePython();
+  const runtimeReady = Boolean(
+    python && (!checkRuntime || checkPythonRuntime(python)),
+  );
+  const modelInstalled = fs.existsSync(RMBG_CONFIG.model.path);
+
+  return {
+    enabled: true,
+    ready: runtimeReady && modelInstalled,
+    runtimeReady,
+    modelInstalled,
+    python,
+    modelPath: RMBG_CONFIG.model.path,
+  };
+}
+
+export async function prepareLocalRmbg({
+  autoInstallRuntime = RMBG_CONFIG.runtime.autoInstallRuntime,
+  autoDownloadModel = RMBG_CONFIG.runtime.autoDownloadModel,
+  onLog = null,
+} = {}) {
   if (!RMBG_CONFIG.enabled) {
     throw new Error("RMBG local está desativado em RMBG_CONFIG.enabled.");
   }
@@ -320,7 +415,7 @@ export async function prepareLocalRmbg() {
     throw new Error(`Script RMBG não encontrado: ${RMBG_CONFIG.runtime.scriptPath}`);
   }
 
-  installSystemPythonIfPossible();
+  installSystemPythonIfPossible({ autoInstallRuntime, onLog });
 
   const basePython = resolvePython();
 
@@ -333,7 +428,7 @@ export async function prepareLocalRmbg() {
   const python = createVenvIfPossible(basePython);
 
   if (!checkPythonRuntime(python)) {
-    installPythonPackages(python);
+    installPythonPackages(python, { autoInstallRuntime, onLog });
   }
 
   if (!checkPythonRuntime(python)) {
@@ -342,12 +437,122 @@ export async function prepareLocalRmbg() {
     );
   }
 
-  const modelPath = await ensureRmbgModel();
+  const modelPath = await ensureRmbgModel({ autoDownloadModel, onLog });
 
   return {
     python,
     modelPath,
   };
+}
+
+export async function prepareLocalRmbgStartup({
+  interactive = shouldPromptRmbgSetup(),
+  onLog = infoLog,
+  onWarning = warningLog,
+} = {}) {
+  if (!RMBG_CONFIG.enabled) {
+    return {
+      ok: true,
+      skipped: true,
+      enabled: false,
+    };
+  }
+
+  onLog("[RMBG LOCAL] Preparação do removebg local iniciada antes da conexão do bot.");
+
+  const status = await getLocalRmbgStatus();
+
+  if (status.ready) {
+    onLog("[RMBG LOCAL] TensorFlow Lite/LiteRT validado e modelo RMBG já instalado.");
+    return {
+      ok: true,
+      runtimeReady: true,
+      modelInstalled: true,
+    };
+  }
+
+  let shouldPrepareRuntime = true;
+
+  if (!status.runtimeReady) {
+    onWarning("[RMBG LOCAL] Ambiente TensorFlow Lite/LiteRT não está preparado.");
+
+    shouldPrepareRuntime =
+      Boolean(RMBG_CONFIG.runtime.autoInstallRuntime) ||
+      (Boolean(RMBG_CONFIG.runtime.askBeforePrepare) &&
+        (await askYesNo(
+          [
+            "O removebg local está ativado, mas o ambiente TensorFlow Lite/LiteRT não está preparado.",
+            "Deseja preparar o ambiente agora? Se cancelar, o removebg local será desativado automaticamente. (s/n) >",
+          ].join("\n"),
+          { enabled: interactive, defaultValue: false, onLog: onWarning },
+        )));
+
+    if (!shouldPrepareRuntime) {
+      disableRmbgForCurrentRun("Preparo do ambiente recusado.", onWarning);
+      return {
+        ok: false,
+        disabled: true,
+        reason: "runtime-prepare-refused",
+      };
+    }
+  }
+
+  let shouldDownloadModel = true;
+
+  if (!status.modelInstalled) {
+    onWarning(`[RMBG LOCAL] Modelo ${RMBG_CONFIG.model.id} não instalado.`);
+
+    shouldDownloadModel =
+      Boolean(RMBG_CONFIG.runtime.autoDownloadModel) ||
+      (Boolean(RMBG_CONFIG.runtime.askBeforeDownload) &&
+        (await askYesNo(
+          [
+            `O removebg local está ativado, mas o modelo ${RMBG_CONFIG.model.id} não está instalado.`,
+            `Arquivo: ${RMBG_CONFIG.model.fileName}`,
+            `Fonte: ${RMBG_CONFIG.model.url}`,
+            "Deseja baixar o modelo agora? Se cancelar, o removebg local será desativado automaticamente. (s/n) >",
+          ].join("\n"),
+          { enabled: interactive, defaultValue: false, onLog: onWarning },
+        )));
+
+    if (!shouldDownloadModel) {
+      disableRmbgForCurrentRun("Download do modelo recusado.", onWarning);
+      return {
+        ok: false,
+        disabled: true,
+        reason: "model-download-refused",
+      };
+    }
+  }
+
+  try {
+    onLog("[RMBG LOCAL] Preparação confirmada. A inicialização ficará pausada até terminar.");
+
+    await prepareLocalRmbg({
+      autoInstallRuntime: shouldPrepareRuntime,
+      autoDownloadModel: shouldDownloadModel,
+      onLog,
+    });
+
+    onLog("[RMBG LOCAL] Ambiente e modelo prontos. Continuando inicialização do bot.");
+
+    return {
+      ok: true,
+      runtimeReady: true,
+      modelInstalled: true,
+    };
+  } catch (error) {
+    disableRmbgForCurrentRun(
+      error.message || "Falha ao preparar removebg local.",
+      onWarning,
+    );
+
+    return {
+      ok: false,
+      disabled: true,
+      reason: "prepare-failed",
+    };
+  }
 }
 
 export async function removeBackgroundLocal(inputBuffer, options = {}) {
