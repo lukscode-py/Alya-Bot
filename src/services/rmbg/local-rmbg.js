@@ -29,11 +29,13 @@ function commandExists(command) {
 }
 
 function runSync(command, args = [], options = {}) {
+  const showOutput = Boolean(options.showOutput);
   const result = spawnSync(command, args, {
-    encoding: "utf8",
-    stdio: "pipe",
+    encoding: showOutput ? undefined : "utf8",
+    stdio: showOutput ? "inherit" : "pipe",
     shell: false,
     ...options,
+    showOutput: undefined,
   });
 
   if (result.status !== 0 && !options.allowFail) {
@@ -140,7 +142,7 @@ function installSystemPythonIfPossible({
 
     runShellSync(
       "pkg update -y && pkg install -y python clang libjpeg-turbo zlib freetype libpng openblas",
-      { allowFail: true },
+      { allowFail: true, showOutput: true },
     );
     return;
   }
@@ -162,7 +164,7 @@ function installSystemPythonIfPossible({
           "--accept-package-agreements",
           "--accept-source-agreements",
         ],
-        { allowFail: true },
+        { allowFail: true, showOutput: true },
       );
     }
 
@@ -177,6 +179,7 @@ function installSystemPythonIfPossible({
 
       runShellSync("apt-get update && apt-get install -y python3 python3-venv python3-pip", {
         allowFail: true,
+        showOutput: true,
       });
       return;
     }
@@ -188,7 +191,7 @@ function installSystemPythonIfPossible({
 
       runShellSync(
         "sudo -n apt-get update && sudo -n apt-get install -y python3 python3-venv python3-pip",
-        { allowFail: true },
+        { allowFail: true, showOutput: true },
       );
     }
   }
@@ -244,14 +247,19 @@ function installPythonPackages(
     onLog("[RMBG LOCAL] Instalando dependências Python para TensorFlow Lite/LiteRT.");
   }
 
-  runPythonSync(python, ["-m", "ensurepip", "--upgrade"], { allowFail: true });
+  runPythonSync(python, ["-m", "ensurepip", "--upgrade"], {
+    allowFail: true,
+    showOutput: true,
+  });
   runPythonSync(python, ["-m", "pip", "install", "--upgrade", "pip", "setuptools", "wheel"], {
     allowFail: true,
+    showOutput: true,
   });
 
   for (const packageName of RMBG_CONFIG.runtime.pipPackages) {
     runPythonSync(python, ["-m", "pip", "install", "--upgrade", packageName], {
       allowFail: true,
+      showOutput: true,
     });
   }
 
@@ -262,6 +270,7 @@ function installPythonPackages(
   for (const packageName of RMBG_CONFIG.runtime.interpreterPackages) {
     runPythonSync(python, ["-m", "pip", "install", "--upgrade", packageName], {
       allowFail: true,
+      showOutput: true,
     });
 
     if (checkPythonRuntime(python)) {
@@ -301,6 +310,39 @@ async function ensureRmbgModel({
   if (response.status < 200 || response.status >= 300) {
     throw new Error(`Falha ao baixar modelo RMBG. HTTP ${response.status}`);
   }
+
+  const totalBytes = Number(response.headers["content-length"] || 0);
+  let downloadedBytes = 0;
+  let lastLoggedPercent = -1;
+  let lastLoggedMb = 0;
+
+  response.data.on("data", (chunk) => {
+    downloadedBytes += chunk.length;
+
+    if (!onLog) {
+      return;
+    }
+
+    const downloadedMb = downloadedBytes / 1024 / 1024;
+
+    if (totalBytes > 0) {
+      const percent = Math.floor((downloadedBytes / totalBytes) * 100);
+
+      if (percent >= lastLoggedPercent + 5 || percent === 100) {
+        lastLoggedPercent = percent;
+        onLog(
+          `[RMBG LOCAL] Download do modelo: ${percent}% (${downloadedMb.toFixed(1)} MB)`,
+        );
+      }
+
+      return;
+    }
+
+    if (downloadedMb >= lastLoggedMb + 5) {
+      lastLoggedMb = downloadedMb;
+      onLog(`[RMBG LOCAL] Download do modelo: ${downloadedMb.toFixed(1)} MB baixados`);
+    }
+  });
 
   await pipeline(response.data, fs.createWriteStream(tempModelPath));
   await fs.promises.rename(tempModelPath, modelPath);
@@ -527,6 +569,7 @@ export async function prepareLocalRmbgStartup({
 
   try {
     onLog("[RMBG LOCAL] Preparação confirmada. A inicialização ficará pausada até terminar.");
+    onLog("[RMBG LOCAL] O processo de instalação será exibido no terminal.");
 
     await prepareLocalRmbg({
       autoInstallRuntime: shouldPrepareRuntime,

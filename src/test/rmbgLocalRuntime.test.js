@@ -41,12 +41,16 @@ describe("Local RMBG runtime", () => {
     assert.match(serviceSource, /python3/);
     assert.match(serviceSource, /python/);
     assert.match(serviceSource, /py/);
+    assert.match(serviceSource, /showOutput:\s*true/);
+    assert.match(serviceSource, /stdio:\s*showOutput \? "inherit" : "pipe"/);
   });
 
   it("local service downloads the RMBG model automatically", () => {
     assert.match(serviceSource, /axios\.get\(RMBG_CONFIG\.model\.url/);
     assert.match(serviceSource, /autoDownloadModel/);
     assert.match(serviceSource, /pipeline/);
+    assert.match(serviceSource, /content-length/);
+    assert.match(serviceSource, /Download do modelo/);
   });
 
   it("prepares RMBG during bot startup and asks before setup/download", () => {
